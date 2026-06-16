@@ -54,9 +54,11 @@ export default function LoginPage() {
             )}
             <SubmitButton />
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            The first account to sign up becomes the Owner.
-          </p>
+          <div className="mt-4 text-center text-xs">
+            <a href="/forgot-password" className="text-muted-foreground underline-offset-4 hover:underline">
+              Forgot password?
+            </a>
+          </div>
         </CardContent>
       </Card>
     </div>

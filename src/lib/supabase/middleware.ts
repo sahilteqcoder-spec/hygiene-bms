@@ -34,13 +34,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  // Routes reachable without a session.
+  const publicRoutes = ["/login", "/setup", "/forgot-password", "/reset-password"];
   const isAuthRoute = path === "/login";
+  const isPublicRoute = publicRoutes.includes(path);
   const isPublicAsset =
     path.startsWith("/_next") ||
+    path.startsWith("/auth") ||
     path.startsWith("/api/auth") ||
     path === "/favicon.ico";
 
-  if (!user && !isAuthRoute && !isPublicAsset) {
+  if (!user && !isPublicRoute && !isPublicAsset) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

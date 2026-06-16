@@ -1,14 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, FileText, Download, Trash2, Filter, MoreHorizontal } from "lucide-react";
+import { Eye, FileText, Download, Trash2, Filter, MoreHorizontal, Search } from "lucide-react";
 import { formatPaise, formatDateTime } from "@/lib/format";
-import { DataTable, type Column } from "@/components/data-table";
+import { useDebounce } from "@/hooks/use-debounce";
 import { SaleViewModal } from "@/components/sale-view-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -41,16 +50,47 @@ const MODE_VARIANT: Record<SaleRow["payment_mode"], "default" | "secondary" | "w
   credit: "warning",
 };
 
-export function SalesList({ rows, canDelete }: { rows: SaleRow[]; canDelete: boolean }) {
+export function SalesList({
+  rows,
+  page,
+  pageCount,
+  total,
+  q,
+  mode,
+  canDelete,
+}: {
+  rows: SaleRow[];
+  page: number;
+  pageCount: number;
+  total: number;
+  q: string;
+  mode: string;
+  canDelete: boolean;
+}) {
   const router = useRouter();
   const { toast } = useToast();
-  const [mode, setMode] = useState("all");
   const [viewId, setViewId] = useState<string | null>(null);
+  const [search, setSearch] = useState(q);
+  const debounced = useDebounce(search, 350);
+  const lastPushed = useRef(q);
 
-  const filtered = useMemo(
-    () => (mode === "all" ? rows : rows.filter((r) => r.payment_mode === mode)),
-    [rows, mode]
-  );
+  // Build a URL and navigate (server refetches the page).
+  function go(params: { page?: number; q?: string; mode?: string }) {
+    const sp = new URLSearchParams();
+    const next = { page, q, mode, ...params };
+    if (next.page && next.page > 1) sp.set("page", String(next.page));
+    if (next.q) sp.set("q", next.q);
+    if (next.mode && next.mode !== "all") sp.set("mode", next.mode);
+    router.push(`/sales${sp.toString() ? `?${sp}` : ""}`);
+  }
+
+  // Push debounced search (reset to page 1) when it actually changes.
+  useEffect(() => {
+    if (debounced === lastPushed.current) return;
+    lastPushed.current = debounced;
+    go({ q: debounced, page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced]);
 
   async function handleDelete(id: string, invoice: string) {
     if (!confirm(`Delete invoice ${invoice}? The sold stock will be returned to inventory.`)) return;
@@ -62,86 +102,125 @@ export function SalesList({ rows, canDelete }: { rows: SaleRow[]; canDelete: boo
     }
   }
 
-  const columns: Column<SaleRow>[] = [
-    { header: "Invoice", cell: (r) => <span className="font-medium">{r.invoice_no}</span> },
-    { header: "Customer", cell: (r) => r.customer_name },
-    { header: "Date", cell: (r) => formatDateTime(r.created_at), className: "text-muted-foreground" },
-    {
-      header: "Payment",
-      cell: (r) => (
-        <Badge variant={MODE_VARIANT[r.payment_mode]} className="capitalize">
-          {r.payment_mode}
-        </Badge>
-      ),
-    },
-    { header: "Total", cell: (r) => formatPaise(r.total_paise), className: "text-right font-medium" },
-    {
-      header: "",
-      className: "text-right",
-      cell: (r) => (
-        <div className="flex justify-end gap-1">
-          <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>
-            <Eye className="h-4 w-4" /> View
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/sales/${r.id}`}>
-                  <FileText className="h-4 w-4" /> Full invoice
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href={`/api/invoices/${r.id}?store=1`} target="_blank" rel="noopener noreferrer">
-                  <Download className="h-4 w-4" /> Download PDF
-                </a>
-              </DropdownMenuItem>
-              {canDelete && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onSelect={() => handleDelete(r.id, r.invoice_no)}
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <>
-      <DataTable
-        columns={columns}
-        data={filtered}
-        rowKey={(r) => r.id}
-        searchAccessor={(r) => `${r.invoice_no} ${r.customer_name}`}
-        searchPlaceholder="Search invoices…"
-        toolbar={
-          <Select value={mode} onValueChange={setMode}>
-            <SelectTrigger className="w-40">
-              <Filter className="mr-1 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All payments</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="upi">UPI</SelectItem>
-              <SelectItem value="credit">Credit</SelectItem>
-            </SelectContent>
-          </Select>
-        }
-      />
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search invoice no…"
+            className="pl-8"
+          />
+        </div>
+        <Select value={mode} onValueChange={(v) => go({ mode: v, page: 1 })}>
+          <SelectTrigger className="w-40">
+            <Filter className="mr-1 h-4 w-4" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="cash">Cash</SelectItem>
+            <SelectItem value="upi">UPI</SelectItem>
+            <SelectItem value="credit">Credit</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Invoice</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  No invoices found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.invoice_no}</TableCell>
+                  <TableCell>{r.customer_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDateTime(r.created_at)}</TableCell>
+                  <TableCell>
+                    <Badge variant={MODE_VARIANT[r.payment_mode]} className="capitalize">
+                      {r.payment_mode}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{formatPaise(r.total_paise)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>
+                        <Eye className="h-4 w-4" /> View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/sales/${r.id}`}>
+                              <FileText className="h-4 w-4" /> Full invoice
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <a href={`/api/invoices/${r.id}?store=1`} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" /> Download PDF
+                            </a>
+                          </DropdownMenuItem>
+                          {canDelete && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={() => handleDelete(r.id, r.invoice_no)}
+                              >
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {total} invoice{total === 1 ? "" : "s"} · page {page} of {pageCount}
+        </span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => go({ page: page - 1 })}>
+            Previous
+          </Button>
+          <Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => go({ page: page + 1 })}>
+            Next
+          </Button>
+        </div>
+      </div>
+
       <SaleViewModal saleId={viewId} open={!!viewId} onOpenChange={(o) => !o && setViewId(null)} />
-    </>
+    </div>
   );
 }

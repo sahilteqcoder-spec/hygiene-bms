@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { MobileNav } from "@/components/mobile-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +29,9 @@ export function Header({ user, businessName }: { user: AppUser; businessName: st
         <MobileNav role={user.role} businessName={businessName} />
         <h1 className="text-base font-semibold md:text-lg">{titleFromPath(pathname)}</h1>
       </div>
-      <DropdownMenu>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -56,7 +59,8 @@ export function Header({ user, businessName }: { user: AppUser; businessName: st
             <LogOut className="h-4 w-4" /> Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }

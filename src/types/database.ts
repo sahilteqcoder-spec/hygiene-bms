@@ -39,6 +39,7 @@ interface ProductRow {
   reorder_point: number;
   gst_rate: number;
   hsn_code: string | null;
+  barcode: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -173,6 +174,7 @@ interface CurrentStockRow {
   current_stock: number;
   is_low_stock: boolean;
   stock_value_paise: number;
+  barcode: string | null;
 }
 interface CustomerOutstandingRow {
   customer_id: string;
@@ -316,6 +318,7 @@ export interface Database {
         Returns: number;
       };
       delete_sale: { Args: { p_sale_id: string }; Returns: undefined };
+      has_any_user: { Args: Record<string, never>; Returns: boolean };
       dashboard_summary: { Args: Record<string, never>; Returns: DashboardSummary };
       current_user_role: { Args: Record<string, never>; Returns: UserRole };
       is_owner: { Args: Record<string, never>; Returns: boolean };

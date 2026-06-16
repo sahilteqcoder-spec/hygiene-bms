@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Download } from "lucide-react";
 import { formatPaise, formatDate, formatNumber } from "@/lib/format";
+import { exportCsv, rs } from "@/lib/csv";
 import type { ProfitLossRow, GstSummaryRow, TopProduct } from "@/types/sales";
 import type { CustomerOutstanding } from "@/types/customer";
 import type { CurrentStock } from "@/types/product";
@@ -107,7 +108,16 @@ export function ReportsView({
 
         {/* 1. Daily P&L */}
         <TabsContent value="pl" className="mt-4">
-          <ReportCard title={`Daily Profit & Loss · ${formatDate(from)} – ${formatDate(to)}`}>
+          <ReportCard
+            title={`Daily Profit & Loss · ${formatDate(from)} – ${formatDate(to)}`}
+            onExport={() =>
+              exportCsv(
+                `profit-loss_${from}_${to}`,
+                ["Day", "Sales", "COGS", "Expenses", "Net Profit"],
+                pl.map((r) => [r.day, rs(r.total_sales_paise), rs(r.cogs_paise), rs(r.expenses_paise), rs(r.net_profit_paise)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -146,7 +156,16 @@ export function ReportsView({
 
         {/* 2. Monthly */}
         <TabsContent value="monthly" className="mt-4">
-          <ReportCard title="Monthly Business Report">
+          <ReportCard
+            title="Monthly Business Report"
+            onExport={() =>
+              exportCsv(
+                "monthly-report",
+                ["Month", "Sales", "COGS", "Expenses", "Net Profit"],
+                monthly.map((m) => [m.month, rs(m.sales), rs(m.cogs), rs(m.expenses), rs(m.profit)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -174,7 +193,16 @@ export function ReportsView({
 
         {/* 3. GST */}
         <TabsContent value="gst" className="mt-4">
-          <ReportCard title="GST Summary">
+          <ReportCard
+            title="GST Summary"
+            onExport={() =>
+              exportCsv(
+                `gst-summary_${from}_${to}`,
+                ["GST Rate %", "Gross", "Taxable", "CGST", "SGST", "Total GST"],
+                gst.map((g) => [g.rate, rs(g.gross), rs(g.taxable), rs(g.cgst), rs(g.sgst), rs(g.gst)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -208,7 +236,16 @@ export function ReportsView({
 
         {/* 4. Top products */}
         <TabsContent value="top" className="mt-4">
-          <ReportCard title="Top Selling Products (all-time)">
+          <ReportCard
+            title="Top Selling Products (all-time)"
+            onExport={() =>
+              exportCsv(
+                "top-products",
+                ["Product", "Units", "Revenue", "Profit"],
+                topProducts.map((p) => [p.name, p.qty_sold, rs(p.revenue_paise), rs(p.profit_paise)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -234,7 +271,16 @@ export function ReportsView({
 
         {/* 5. Outstanding */}
         <TabsContent value="outstanding" className="mt-4">
-          <ReportCard title="Customer Outstanding Report">
+          <ReportCard
+            title="Customer Outstanding Report"
+            onExport={() =>
+              exportCsv(
+                "customer-outstanding",
+                ["Customer", "Credit Sales", "Payments", "Outstanding"],
+                outstanding.map((c) => [c.name, rs(c.credit_sales_paise), rs(c.payments_paise), rs(c.outstanding_paise)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -260,7 +306,16 @@ export function ReportsView({
 
         {/* 6. Inventory valuation */}
         <TabsContent value="inventory" className="mt-4">
-          <ReportCard title={`Inventory Valuation · ${formatPaise(invTotal)} at cost`}>
+          <ReportCard
+            title={`Inventory Valuation · ${formatPaise(invTotal)} at cost`}
+            onExport={() =>
+              exportCsv(
+                "inventory-valuation",
+                ["Product", "Stock", "Unit", "Cost", "Value"],
+                inventory.map((r) => [r.name, r.current_stock, r.unit, rs(r.cost_price_paise), rs(r.stock_value_paise)])
+              )
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -294,10 +349,25 @@ export function ReportsView({
   );
 }
 
-function ReportCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ReportCard({
+  title,
+  onExport,
+  children,
+}: {
+  title: string;
+  onExport?: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <Card className="print-area">
-      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle>{title}</CardTitle>
+        {onExport && (
+          <Button size="sm" variant="outline" className="no-print" onClick={onExport}>
+            <Download className="h-4 w-4" /> Export CSV
+          </Button>
+        )}
+      </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
   );

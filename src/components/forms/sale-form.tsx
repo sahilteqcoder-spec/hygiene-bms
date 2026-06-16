@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart, ScanLine, Plus } from "lucide-react";
 import type { CartLine } from "@/types/sales";
+import { CustomerForm } from "@/components/forms/customer-form";
 import { formatPaise, paiseToRupees, rupeesToPaise } from "@/lib/format";
 import { subtotalPaise, saleTotalPaise, tierPricePaise } from "@/lib/calculations";
 import { createSaleAction } from "@/app/(app)/sales/actions";
@@ -30,6 +31,7 @@ interface ProductOption {
   unit: string;
   current_stock: number;
   selling_price_paise: number; // base price
+  barcode: string | null;
   tiers: PriceTierLite[];
 }
 interface CustomerOption {
@@ -53,6 +55,7 @@ export function SaleForm({
   const [discountRupees, setDiscountRupees] = useState<string>("0");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [picker, setPicker] = useState<string>("");
+  const [barcode, setBarcode] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   const productMap = useMemo(
@@ -72,21 +75,52 @@ export function SaleForm({
     return tierPricePaise(p.selling_price_paise, p.tiers, qty);
   }
 
+  function addToCart(p: ProductOption) {
+    setCart((prev) => {
+      const existing = prev.find((l) => l.product_id === p.product_id);
+      if (existing) {
+        const q = Math.min(existing.quantity + 1, p.current_stock);
+        return prev.map((l) =>
+          l.product_id === p.product_id
+            ? { ...l, quantity: q, unit_price_paise: priceFor(p.product_id, q) }
+            : l
+        );
+      }
+      return [
+        ...prev,
+        {
+          product_id: p.product_id,
+          name: p.name,
+          unit: p.unit,
+          available: p.current_stock,
+          quantity: 1,
+          unit_price_paise: priceFor(p.product_id, 1),
+        },
+      ];
+    });
+  }
+
   function addProduct(productId: string) {
     const p = productMap.get(productId);
-    if (!p) return;
-    setCart((prev) => [
-      ...prev,
-      {
-        product_id: p.product_id,
-        name: p.name,
-        unit: p.unit,
-        available: p.current_stock,
-        quantity: 1,
-        unit_price_paise: priceFor(p.product_id, 1),
-      },
-    ]);
+    if (p) addToCart(p);
     setPicker("");
+  }
+
+  // Barcode scan / manual entry → add the matching product (increment if present).
+  function addByBarcode() {
+    const code = barcode.trim();
+    if (!code) return;
+    const p = products.find((x) => (x.barcode ?? "").toLowerCase() === code.toLowerCase());
+    setBarcode("");
+    if (!p) {
+      toast({ variant: "destructive", title: "Not found", description: `No product with barcode ${code}` });
+      return;
+    }
+    if (p.current_stock <= 0) {
+      toast({ variant: "destructive", title: "Out of stock", description: p.name });
+      return;
+    }
+    addToCart(p);
   }
 
   // Changing quantity re-applies the tier price automatically.
@@ -145,7 +179,31 @@ export function SaleForm({
       <div className="space-y-4 lg:col-span-2">
         <Card>
           <CardContent className="space-y-3 p-4">
-            <Label>Add product</Label>
+            <div className="space-y-1">
+              <Label>Scan / enter barcode</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <ScanLine className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addByBarcode();
+                      }
+                    }}
+                    placeholder="Scan barcode and press Enter…"
+                    className="pl-8"
+                  />
+                </div>
+                <Button type="button" variant="outline" onClick={addByBarcode}>
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            <Label>…or pick a product</Label>
             <Select value={picker} onValueChange={addProduct}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a product to add to the bill…" />
@@ -249,17 +307,29 @@ export function SaleForm({
           <CardContent className="space-y-4 p-4">
             <div className="space-y-1">
               <Label>Customer</Label>
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} ({c.customer_type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={customerId} onValueChange={setCustomerId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="walk-in">Walk-in</SelectItem>
+                    {customers.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} ({c.customer_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <CustomerForm
+                  trigger={
+                    <Button type="button" variant="outline" size="icon" aria-label="Add customer">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The selected customer&apos;s name &amp; details print on the invoice.
+              </p>
             </div>
 
             <div className="space-y-1">
