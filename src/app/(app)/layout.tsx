@@ -17,12 +17,13 @@ export default async function AppLayout({
     .select("business_name")
     .single();
 
+  const businessName = settings?.business_name ?? "Hygiene BMS";
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
-      <Sidebar role={user.role} businessName={settings?.business_name ?? "Hygiene BMS"} />
+      <Sidebar role={user.role} businessName={businessName} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={user} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+        <Header user={user} businessName={businessName} />
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">{children}</main>
       </div>
     </div>
   );

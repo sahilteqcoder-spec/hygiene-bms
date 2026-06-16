@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { signOut } from "@/app/login/actions";
+import { MobileNav } from "@/components/mobile-nav";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,11 +20,14 @@ function titleFromPath(path: string): string {
   return seg.charAt(0).toUpperCase() + seg.slice(1);
 }
 
-export function Header({ user }: { user: AppUser }) {
+export function Header({ user, businessName }: { user: AppUser; businessName: string }) {
   const pathname = usePathname();
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
-      <h1 className="text-base font-semibold md:text-lg">{titleFromPath(pathname)}</h1>
+    <header className="flex h-14 items-center justify-between border-b bg-card px-3 md:px-6">
+      <div className="flex items-center gap-1">
+        <MobileNav role={user.role} businessName={businessName} />
+        <h1 className="text-base font-semibold md:text-lg">{titleFromPath(pathname)}</h1>
+      </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-2">

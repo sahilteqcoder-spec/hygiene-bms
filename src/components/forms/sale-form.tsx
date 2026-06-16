@@ -165,7 +165,8 @@ export function SaleForm({
             </Select>
 
             <div className="rounded-md border">
-              <div className="grid grid-cols-12 gap-2 border-b bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+              {/* Column headers (desktop only) */}
+              <div className="hidden grid-cols-12 gap-2 border-b bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
                 <div className="col-span-5">Product</div>
                 <div className="col-span-2 text-center">Qty</div>
                 <div className="col-span-2 text-right">Price (₹)</div>
@@ -181,40 +182,57 @@ export function SaleForm({
                   const p = productMap.get(l.product_id);
                   const tiered = p && p.tiers.length > 0;
                   return (
-                    <div key={l.product_id} className="grid grid-cols-12 items-center gap-2 border-b px-3 py-2 text-sm last:border-0">
-                      <div className="col-span-5">
-                        <div className="font-medium">{l.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {l.available} {l.unit} available
-                          {tiered ? " · price auto-set by quantity" : ""}
+                    <div key={l.product_id} className="space-y-2 border-b px-3 py-3 text-sm last:border-0 sm:space-y-0">
+                      {/* Row 1 (mobile): name + remove. On desktop name sits in the grid. */}
+                      <div className="flex items-start justify-between sm:hidden">
+                        <div>
+                          <div className="font-medium">{l.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {l.available} {l.unit} available{tiered ? " · auto-priced" : ""}
+                          </div>
                         </div>
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={l.available}
-                          value={l.quantity}
-                          onChange={(e) => changeQuantity(l.product_id, Number(e.target.value))}
-                          className={l.quantity > l.available ? "border-destructive" : ""}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={paiseToRupees(l.unit_price_paise)}
-                          onChange={(e) => changePrice(l.product_id, rupeesToPaise(Number(e.target.value) || 0))}
-                          className="text-right"
-                        />
-                      </div>
-                      <div className="col-span-2 text-right font-medium">
-                        {formatPaise(l.quantity * l.unit_price_paise)}
-                      </div>
-                      <div className="col-span-1 text-right">
                         <Button size="icon" variant="ghost" onClick={() => removeLine(l.product_id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                      </div>
+
+                      <div className="grid grid-cols-3 items-end gap-2 sm:grid-cols-12 sm:items-center">
+                        <div className="hidden sm:col-span-5 sm:block">
+                          <div className="font-medium">{l.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {l.available} {l.unit} available{tiered ? " · price auto-set by quantity" : ""}
+                          </div>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="mb-1 block text-xs text-muted-foreground sm:hidden">Qty</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={l.available}
+                            value={l.quantity}
+                            onChange={(e) => changeQuantity(l.product_id, Number(e.target.value))}
+                            className={l.quantity > l.available ? "border-destructive" : ""}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="mb-1 block text-xs text-muted-foreground sm:hidden">Price (₹)</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={paiseToRupees(l.unit_price_paise)}
+                            onChange={(e) => changePrice(l.product_id, rupeesToPaise(Number(e.target.value) || 0))}
+                            className="text-right"
+                          />
+                        </div>
+                        <div className="text-right sm:col-span-2">
+                          <label className="mb-1 block text-xs text-muted-foreground sm:hidden">Total</label>
+                          <span className="font-medium">{formatPaise(l.quantity * l.unit_price_paise)}</span>
+                        </div>
+                        <div className="hidden text-right sm:col-span-1 sm:block">
+                          <Button size="icon" variant="ghost" onClick={() => removeLine(l.product_id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
