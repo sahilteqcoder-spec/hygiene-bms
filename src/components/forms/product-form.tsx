@@ -50,6 +50,7 @@ export function ProductForm({
     register,
     handleSubmit,
     control,
+    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
@@ -76,6 +77,7 @@ export function ProductForm({
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "tiers" });
+  const watchedTiers = watch("tiers");
 
   async function onSubmit(values: ProductFormValues) {
     const res = await saveProduct(product?.id ?? null, values);
@@ -137,7 +139,9 @@ export function ProductForm({
               <div>
                 <Label>Quantity price tiers</Label>
                 <p className="text-xs text-muted-foreground">
-                  Buy ≥ this quantity → this price. Below the smallest tier, the Base price applies.
+                  Buy ≥ this quantity → this <strong>per-piece</strong> price. Below the smallest
+                  tier, the Base price applies. Example: for 20 pieces to total ₹130, enter 6.50
+                  (= 130 ÷ 20).
                 </p>
               </div>
               <Button
@@ -158,24 +162,36 @@ export function ProductForm({
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground">
                   <span className="col-span-5">Min quantity</span>
-                  <span className="col-span-6">Price (₹)</span>
+                  <span className="col-span-6">Unit price (₹/piece)</span>
                   <span className="col-span-1" />
                 </div>
-                {fields.map((f, i) => (
-                  <div key={f.id} className="grid grid-cols-12 items-center gap-2">
-                    <div className="col-span-5">
-                      <Input type="number" min={1} {...register(`tiers.${i}.min_quantity` as const)} />
+                {fields.map((f, i) => {
+                  const q = Number(watchedTiers?.[i]?.min_quantity) || 0;
+                  const up = Number(watchedTiers?.[i]?.price) || 0;
+                  const lineTotal = q * up;
+                  return (
+                    <div key={f.id} className="space-y-1">
+                      <div className="grid grid-cols-12 items-center gap-2">
+                        <div className="col-span-5">
+                          <Input type="number" min={1} {...register(`tiers.${i}.min_quantity` as const)} />
+                        </div>
+                        <div className="col-span-6">
+                          <Input type="number" step="0.01" {...register(`tiers.${i}.price` as const)} />
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <Button type="button" size="icon" variant="ghost" onClick={() => remove(i)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {q > 0 && up > 0 && (
+                        <p className="pl-1 text-xs text-emerald-600">
+                          = ₹{lineTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} for {q} pieces
+                        </p>
+                      )}
                     </div>
-                    <div className="col-span-6">
-                      <Input type="number" step="0.01" {...register(`tiers.${i}.price` as const)} />
-                    </div>
-                    <div className="col-span-1 text-right">
-                      <Button type="button" size="icon" variant="ghost" onClick={() => remove(i)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
