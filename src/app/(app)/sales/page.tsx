@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { requireAccess } from "@/lib/auth";
+import { isOwner } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { SalesList, type SaleRow } from "./sales-list";
@@ -8,7 +9,7 @@ import { SalesList, type SaleRow } from "./sales-list";
 export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
-  await requireAccess("sales");
+  const user = await requireAccess("sales");
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -39,7 +40,7 @@ export default async function SalesPage() {
           </Link>
         </Button>
       </div>
-      <SalesList rows={rows} />
+      <SalesList rows={rows} canDelete={isOwner(user.role)} />
     </div>
   );
 }

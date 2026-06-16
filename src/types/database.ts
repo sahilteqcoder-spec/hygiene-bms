@@ -315,6 +315,7 @@ export interface Database {
         Args: { p_product_id: string; p_quantity: number };
         Returns: number;
       };
+      delete_sale: { Args: { p_sale_id: string }; Returns: undefined };
       dashboard_summary: { Args: Record<string, never>; Returns: DashboardSummary };
       current_user_role: { Args: Record<string, never>; Returns: UserRole };
       is_owner: { Args: Record<string, never>; Returns: boolean };

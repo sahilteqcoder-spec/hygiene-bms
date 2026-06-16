@@ -37,3 +37,18 @@ export async function createSaleAction(values: unknown): Promise<CreateSaleResul
   revalidatePath("/dashboard");
   return { ok: true, saleId: result?.sale_id, invoiceNo: result?.invoice_no };
 }
+
+export async function deleteSaleAction(id: string): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const supabase = await createClient();
+  // delete_sale restores stock and removes the sale + its items atomically.
+  const { error } = await supabase.rpc("delete_sale", { p_sale_id: id });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/sales");
+  revalidatePath("/inventory");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
