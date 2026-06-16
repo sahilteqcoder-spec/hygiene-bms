@@ -50,7 +50,7 @@ export function PurchasesView({
     { header: "Invoice", cell: (r) => <span className="font-medium">{r.invoice_no ?? "—"}</span> },
     { header: "Supplier", cell: (r) => r.supplier_name },
     { header: "Date", cell: (r) => formatDate(r.created_at), className: "text-muted-foreground" },
-    { header: "Transport", cell: (r) => formatPaise(r.transport_cost_paise), className: "text-right text-muted-foreground" },
+    { header: "Charges", cell: (r) => formatPaise(r.transport_cost_paise), className: "text-right text-muted-foreground" },
     { header: "Total", cell: (r) => formatPaise(r.total_amount_paise), className: "text-right font-medium" },
   ];
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, ArrowDownToLine, ArrowUpFromLine, Trash2, Filter } from "lucide-react";
-import type { CurrentStock, Product } from "@/types/product";
+import type { CurrentStock, Product, PriceTier } from "@/types/product";
 import { formatPaise, formatNumber } from "@/lib/format";
 import { grossMarginPct } from "@/lib/calculations";
 import { useInventoryRealtime } from "@/hooks/use-inventory";
@@ -31,10 +31,11 @@ import { useToast } from "@/hooks/use-toast";
 interface Props {
   rows: CurrentStock[];
   products: Product[];
+  tiersByProduct: Record<string, PriceTier[]>;
   canDelete: boolean;
 }
 
-export function InventoryClient({ rows, products, canDelete }: Props) {
+export function InventoryClient({ rows, products, tiersByProduct, canDelete }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   useInventoryRealtime(() => router.refresh());
@@ -126,6 +127,7 @@ export function InventoryClient({ rows, products, canDelete }: Props) {
                 {product && (
                   <ProductForm
                     product={product}
+                    tiers={tiersByProduct[r.product_id]}
                     trigger={
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Pencil className="h-4 w-4" /> Edit

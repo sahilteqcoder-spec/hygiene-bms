@@ -30,7 +30,7 @@ export async function saveProduct(
     type: v.type || null,
     unit: v.unit,
     selling_price_paise: rupeesToPaise(v.selling_price),
-    wholesale_price_paise: rupeesToPaise(v.wholesale_price),
+    wholesale_price_paise: rupeesToPaise(v.wholesale_price ?? 0),
     cost_price_paise: rupeesToPaise(v.cost_price),
     reorder_point: v.reorder_point,
     gst_rate: v.gst_rate,
@@ -38,12 +38,35 @@ export async function saveProduct(
   };
 
   const supabase = await createClient();
-  const { error } = id
-    ? await supabase.from("products").update(row).eq("id", id)
-    : await supabase.from("products").insert(row);
 
-  if (error) return { ok: false, error: error.message };
+  let productId = id;
+  if (id) {
+    const { error } = await supabase.from("products").update(row).eq("id", id);
+    if (error) return { ok: false, error: error.message };
+  } else {
+    const { data, error } = await supabase.from("products").insert(row).select("id").single();
+    if (error) return { ok: false, error: error.message };
+    productId = data.id;
+  }
+
+  // Replace the product's quantity price tiers with the submitted set.
+  if (productId) {
+    await supabase.from("product_price_tiers").delete().eq("product_id", productId);
+    const tiers = (v.tiers ?? [])
+      .filter((t) => t.min_quantity >= 1)
+      .map((t) => ({
+        product_id: productId!,
+        min_quantity: t.min_quantity,
+        price_paise: rupeesToPaise(t.price),
+      }));
+    if (tiers.length) {
+      const { error } = await supabase.from("product_price_tiers").insert(tiers);
+      if (error) return { ok: false, error: error.message };
+    }
+  }
+
   revalidatePath("/inventory");
+  revalidatePath("/sales/new");
   return { ok: true };
 }
 

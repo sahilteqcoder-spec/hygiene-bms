@@ -57,7 +57,9 @@ export async function createPurchaseAction(values: unknown): Promise<ActionResul
   const { data, error } = await supabase.rpc("create_purchase", {
     p_supplier_id: v.supplier_id ?? null,
     p_invoice_no: v.invoice_no || null,
-    p_transport_cost_paise: rupeesToPaise(v.transport_cost ?? 0),
+    p_charges: (v.charges ?? [])
+      .filter((c) => c.label && c.amount > 0)
+      .map((c) => ({ label: c.label, amount_paise: rupeesToPaise(c.amount) })),
     p_items: v.items.map((i) => ({
       product_id: i.product_id,
       quantity: i.quantity,

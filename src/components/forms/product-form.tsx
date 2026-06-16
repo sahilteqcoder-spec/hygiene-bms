@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { Plus, Trash2 } from "lucide-react";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { saveProduct } from "@/app/(app)/inventory/actions";
 import { paiseToRupees } from "@/lib/format";
-import type { Product } from "@/types/product";
+import type { Product, PriceTier } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,15 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   );
 }
 
-export function ProductForm({ product, trigger }: { product?: Product; trigger: React.ReactNode }) {
+export function ProductForm({
+  product,
+  tiers,
+  trigger,
+}: {
+  product?: Product;
+  tiers?: PriceTier[];
+  trigger: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -40,6 +49,7 @@ export function ProductForm({ product, trigger }: { product?: Product; trigger: 
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
@@ -57,9 +67,15 @@ export function ProductForm({ product, trigger }: { product?: Product; trigger: 
           reorder_point: product.reorder_point,
           gst_rate: product.gst_rate,
           hsn_code: product.hsn_code ?? "",
+          tiers: (tiers ?? [])
+            .slice()
+            .sort((a, b) => a.min_quantity - b.min_quantity)
+            .map((t) => ({ min_quantity: t.min_quantity, price: paiseToRupees(t.price_paise) })),
         }
-      : { unit: "piece", reorder_point: 0, gst_rate: 0 },
+      : { unit: "piece", reorder_point: 0, gst_rate: 0, tiers: [] },
   });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "tiers" });
 
   async function onSubmit(values: ProductFormValues) {
     const res = await saveProduct(product?.id ?? null, values);
@@ -76,7 +92,7 @@ export function ProductForm({ product, trigger }: { product?: Product; trigger: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product ? "Edit product" : "Add product"}</DialogTitle>
           <DialogDescription>Prices are entered in rupees.</DialogDescription>
@@ -99,11 +115,8 @@ export function ProductForm({ product, trigger }: { product?: Product; trigger: 
           <Field label="Unit" error={errors.unit?.message}>
             <Input {...register("unit")} placeholder="pack" />
           </Field>
-          <Field label="Selling price (₹)" error={errors.selling_price?.message}>
+          <Field label="Base price (₹)" error={errors.selling_price?.message}>
             <Input type="number" step="0.01" {...register("selling_price")} />
-          </Field>
-          <Field label="Wholesale price (₹)" error={errors.wholesale_price?.message}>
-            <Input type="number" step="0.01" {...register("wholesale_price")} />
           </Field>
           <Field label="Cost price (₹)" error={errors.cost_price?.message}>
             <Input type="number" step="0.01" {...register("cost_price")} />
@@ -117,6 +130,56 @@ export function ProductForm({ product, trigger }: { product?: Product; trigger: 
           <Field label="HSN code" error={errors.hsn_code?.message}>
             <Input {...register("hsn_code")} placeholder="9619" />
           </Field>
+
+          {/* Quantity price tiers */}
+          <div className="col-span-2 space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Quantity price tiers</Label>
+                <p className="text-xs text-muted-foreground">
+                  Buy ≥ this quantity → this price. Below the smallest tier, the Base price applies.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => append({ min_quantity: 1, price: 0 })}
+              >
+                <Plus className="h-4 w-4" /> Add tier
+              </Button>
+            </div>
+
+            {fields.length === 0 ? (
+              <p className="py-2 text-xs text-muted-foreground">
+                No tiers — every quantity uses the Base price.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground">
+                  <span className="col-span-5">Min quantity</span>
+                  <span className="col-span-6">Price (₹)</span>
+                  <span className="col-span-1" />
+                </div>
+                {fields.map((f, i) => (
+                  <div key={f.id} className="grid grid-cols-12 items-center gap-2">
+                    <div className="col-span-5">
+                      <Input type="number" min={1} {...register(`tiers.${i}.min_quantity` as const)} />
+                    </div>
+                    <div className="col-span-6">
+                      <Input type="number" step="0.01" {...register(`tiers.${i}.price` as const)} />
+                    </div>
+                    <div className="col-span-1 text-right">
+                      <Button type="button" size="icon" variant="ghost" onClick={() => remove(i)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <DialogFooter className="col-span-2">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving…" : "Save product"}

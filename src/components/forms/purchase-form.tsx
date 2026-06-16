@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Truck } from "lucide-react";
+import { Plus, Trash2, Truck } from "lucide-react";
 import { formatPaise, rupeesToPaise } from "@/lib/format";
 import { createPurchaseAction } from "@/app/(app)/purchases/actions";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,10 @@ interface Line {
   batch_no: string;
   expiry_date: string;
 }
+interface Charge {
+  label: string;
+  amount: number; // rupees
+}
 
 export function PurchaseForm({
   products,
@@ -50,7 +54,7 @@ export function PurchaseForm({
 
   const [supplierId, setSupplierId] = useState<string>(suppliers[0]?.id ?? "none");
   const [invoiceNo, setInvoiceNo] = useState("");
-  const [transport, setTransport] = useState("0");
+  const [charges, setCharges] = useState<Charge[]>([{ label: "Transport", amount: 0 }]);
   const [lines, setLines] = useState<Line[]>([]);
   const [picker, setPicker] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -84,8 +88,19 @@ export function PurchaseForm({
     setLines((prev) => prev.filter((l) => l.product_id !== id));
   }
 
+  function updateCharge(i: number, patch: Partial<Charge>) {
+    setCharges((prev) => prev.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+  }
+  function addCharge() {
+    setCharges((prev) => [...prev, { label: "", amount: 0 }]);
+  }
+  function removeCharge(i: number) {
+    setCharges((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
   const itemsTotal = lines.reduce((s, l) => s + l.quantity * rupeesToPaise(l.unit_cost), 0);
-  const grandTotal = itemsTotal + rupeesToPaise(Number(transport) || 0);
+  const chargesTotal = charges.reduce((s, c) => s + rupeesToPaise(Number(c.amount) || 0), 0);
+  const grandTotal = itemsTotal + chargesTotal;
 
   async function submit() {
     if (lines.length === 0) {
@@ -96,7 +111,9 @@ export function PurchaseForm({
     const res = await createPurchaseAction({
       supplier_id: supplierId === "none" ? null : supplierId,
       invoice_no: invoiceNo,
-      transport_cost: Number(transport) || 0,
+      charges: charges
+        .filter((c) => c.label.trim() && Number(c.amount) > 0)
+        .map((c) => ({ label: c.label.trim(), amount: Number(c.amount) })),
       items: lines.map((l) => ({
         product_id: l.product_id,
         quantity: l.quantity,
@@ -117,7 +134,7 @@ export function PurchaseForm({
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
           <div className="space-y-1">
             <Label>Supplier</Label>
             <Select value={supplierId} onValueChange={setSupplierId}>
@@ -133,10 +150,6 @@ export function PurchaseForm({
           <div className="space-y-1">
             <Label>Supplier invoice no.</Label>
             <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="PINV-1234" />
-          </div>
-          <div className="space-y-1">
-            <Label>Transport cost (₹)</Label>
-            <Input type="number" step="0.01" value={transport} onChange={(e) => setTransport(e.target.value)} />
           </div>
         </CardContent>
       </Card>
@@ -188,14 +201,47 @@ export function PurchaseForm({
               ))
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex items-center justify-between border-t pt-3">
+      {/* Purchasing expenses */}
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Purchasing expenses</Label>
+              <p className="text-xs text-muted-foreground">Transport, loading, GST, etc. — all added to the purchase total.</p>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={addCharge}>
+              <Plus className="h-4 w-4" /> Add charge
+            </Button>
+          </div>
+          {charges.map((c, i) => (
+            <div key={i} className="grid grid-cols-12 items-center gap-2">
+              <div className="col-span-7">
+                <Input placeholder="Label (e.g. Transport)" value={c.label} onChange={(e) => updateCharge(i, { label: e.target.value })} />
+              </div>
+              <div className="col-span-4">
+                <Input type="number" step="0.01" placeholder="Amount ₹" value={c.amount} onChange={(e) => updateCharge(i, { amount: Number(e.target.value) })} className="text-right" />
+              </div>
+              <div className="col-span-1 text-right">
+                <Button type="button" size="icon" variant="ghost" onClick={() => removeCharge(i)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex items-center justify-between border-b pb-3">
             <div className="text-sm text-muted-foreground">
-              Items: {formatPaise(itemsTotal)} · Transport: {formatPaise(rupeesToPaise(Number(transport) || 0))}
+              Items: {formatPaise(itemsTotal)} · Expenses: {formatPaise(chargesTotal)}
             </div>
             <div className="text-lg font-semibold">Total: {formatPaise(grandTotal)}</div>
           </div>
-
           <Button className="w-full" onClick={submit} disabled={submitting || lines.length === 0}>
             <Truck className="h-4 w-4" />
             {submitting ? "Saving…" : "Record purchase & add stock"}

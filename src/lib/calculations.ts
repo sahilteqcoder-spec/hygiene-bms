@@ -58,6 +58,23 @@ export function needsReorder(currentStock: number, reorderPoint: number): boolea
 }
 
 /**
+ * Quantity-based tiered price. Picks the tier with the largest min_quantity
+ * that is <= quantity; falls back to the product's base price when none apply.
+ * Mirrors the SQL function public.product_price_at_qty.
+ */
+export function tierPricePaise(
+  basePricePaise: number,
+  tiers: { min_quantity: number; price_paise: number }[],
+  quantity: number
+): number {
+  const qty = Math.max(quantity, 1);
+  const applicable = tiers
+    .filter((t) => t.min_quantity <= qty)
+    .sort((a, b) => b.min_quantity - a.min_quantity);
+  return applicable.length ? applicable[0].price_paise : basePricePaise;
+}
+
+/**
  * GST split from a GST-INCLUSIVE amount (Indian retail MRP convention).
  * gst = total × rate / (100 + rate); taxable = total − gst.
  */

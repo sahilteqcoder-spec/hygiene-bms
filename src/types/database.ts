@@ -81,6 +81,20 @@ interface PurchaseItemRow {
   batch_no: string | null;
   expiry_date: string | null;
 }
+interface PurchaseChargeRow {
+  id: string;
+  purchase_id: string;
+  label: string;
+  amount_paise: number;
+  created_at: string;
+}
+interface PriceTierRow {
+  id: string;
+  product_id: string;
+  min_quantity: number;
+  price_paise: number;
+  created_at: string;
+}
 interface CustomerRow {
   id: string;
   name: string;
@@ -234,6 +248,16 @@ export interface Database {
         Omit<PurchaseItemRow, "id"> & { id?: string },
         Partial<PurchaseItemRow>
       >;
+      purchase_charges: Table<
+        PurchaseChargeRow,
+        Omit<PurchaseChargeRow, "id" | "created_at"> & { id?: string },
+        Partial<PurchaseChargeRow>
+      >;
+      product_price_tiers: Table<
+        PriceTierRow,
+        Omit<PriceTierRow, "id" | "created_at"> & { id?: string },
+        Partial<PriceTierRow>
+      >;
       customers: Table<
         CustomerRow,
         Omit<CustomerRow, "id" | "created_at" | "updated_at" | "deleted_at"> & { id?: string },
@@ -282,10 +306,14 @@ export interface Database {
         Args: {
           p_supplier_id: string | null;
           p_invoice_no: string | null;
-          p_transport_cost_paise: number;
+          p_charges: PurchaseChargeInput[];
           p_items: PurchaseItemInput[];
         };
         Returns: string;
+      };
+      product_price_at_qty: {
+        Args: { p_product_id: string; p_quantity: number };
+        Returns: number;
       };
       dashboard_summary: { Args: Record<string, never>; Returns: DashboardSummary };
       current_user_role: { Args: Record<string, never>; Returns: UserRole };
@@ -314,6 +342,11 @@ export interface PurchaseItemInput {
   unit_cost_paise: number;
   batch_no?: string | null;
   expiry_date?: string | null;
+}
+
+export interface PurchaseChargeInput {
+  label: string;
+  amount_paise: number;
 }
 
 export interface DashboardSummary {

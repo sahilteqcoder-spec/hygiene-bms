@@ -11,9 +11,9 @@ A production-ready management system for a **sanitary pad & hygiene products who
 | Module | Highlights |
 | --- | --- |
 | **Dashboard** | Today's sales/expenses, net profit, outstanding; sales-trend, monthly-revenue, expense-breakdown & top-products charts; reorder alerts; recent activity. Role-aware (staff see a limited view). |
-| **Inventory** | Product CRUD, stock-in/out, batch & expiry tracking, low-stock alerts, type filter, debounced search, **Supabase Realtime** live updates. |
-| **Sales** | Retail/wholesale billing cart, discounts, stock-availability guard, atomic checkout, GST tax-invoice, **PDF download** (React-PDF) stored in Supabase Storage, invoice history. |
-| **Purchases** | Supplier directory, multi-line purchase entry, transport cost, automatic stock-in + cost-price update. |
+| **Inventory** | Product CRUD, **quantity-based price tiers** (e.g. 20+ → Price B, 1000+ → Price C), stock-in/out, batch & expiry tracking, low-stock alerts, type filter, debounced search, **Supabase Realtime** live updates. |
+| **Sales** | Billing cart with **price auto-selected by quantity tier**, discounts, stock-availability guard, atomic checkout, GST tax-invoice, **PDF download** (React-PDF) stored in Supabase Storage, invoice history. |
+| **Purchases** | Supplier directory, multi-line bulk purchase entry with per-product cost, **multiple named purchasing charges** (transport, loading, GST…), automatic stock-in + cost-price update. |
 | **Customers** | CRUD, ledger with running balance, outstanding tracking, payment collection & history. |
 | **Expenses** | Category-wise daily entry, monthly summary. |
 | **Reports** | Daily P&L, Monthly business report, GST summary, Top products, Customer outstanding, Inventory valuation — all with date-range filters + print. |

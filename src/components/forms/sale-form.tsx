@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart } from "lucide-react";
 import type { CartLine } from "@/types/sales";
 import { formatPaise, paiseToRupees, rupeesToPaise } from "@/lib/format";
-import { subtotalPaise, saleTotalPaise } from "@/lib/calculations";
+import { subtotalPaise, saleTotalPaise, tierPricePaise } from "@/lib/calculations";
 import { createSaleAction } from "@/app/(app)/sales/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
+interface PriceTierLite {
+  min_quantity: number;
+  price_paise: number;
+}
 interface ProductOption {
   product_id: string;
   name: string;
   unit: string;
   current_stock: number;
-  selling_price_paise: number;
-  wholesale_price_paise: number;
+  selling_price_paise: number; // base price
+  tiers: PriceTierLite[];
 }
 interface CustomerOption {
   id: string;
@@ -51,16 +55,25 @@ export function SaleForm({
   const [picker, setPicker] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  const customer = customers.find((c) => c.id === customerId);
-  const isWholesale = customer?.customer_type === "wholesale";
+  const productMap = useMemo(
+    () => new Map(products.map((p) => [p.product_id, p])),
+    [products]
+  );
 
   const available = useMemo(
     () => products.filter((p) => p.current_stock > 0 && !cart.some((c) => c.product_id === p.product_id)),
     [products, cart]
   );
 
+  // Effective unit price for a product at a quantity (base + tiers).
+  function priceFor(productId: string, qty: number): number {
+    const p = productMap.get(productId);
+    if (!p) return 0;
+    return tierPricePaise(p.selling_price_paise, p.tiers, qty);
+  }
+
   function addProduct(productId: string) {
-    const p = products.find((x) => x.product_id === productId);
+    const p = productMap.get(productId);
     if (!p) return;
     setCart((prev) => [
       ...prev,
@@ -70,14 +83,22 @@ export function SaleForm({
         unit: p.unit,
         available: p.current_stock,
         quantity: 1,
-        unit_price_paise: isWholesale ? p.wholesale_price_paise : p.selling_price_paise,
+        unit_price_paise: priceFor(p.product_id, 1),
       },
     ]);
     setPicker("");
   }
 
-  function updateLine(id: string, patch: Partial<CartLine>) {
-    setCart((prev) => prev.map((l) => (l.product_id === id ? { ...l, ...patch } : l)));
+  // Changing quantity re-applies the tier price automatically.
+  function changeQuantity(id: string, quantity: number) {
+    setCart((prev) =>
+      prev.map((l) =>
+        l.product_id === id ? { ...l, quantity, unit_price_paise: priceFor(id, quantity) } : l
+      )
+    );
+  }
+  function changePrice(id: string, paise: number) {
+    setCart((prev) => prev.map((l) => (l.product_id === id ? { ...l, unit_price_paise: paise } : l)));
   }
   function removeLine(id: string) {
     setCart((prev) => prev.filter((l) => l.product_id !== id));
@@ -136,6 +157,7 @@ export function SaleForm({
                   available.map((p) => (
                     <SelectItem key={p.product_id} value={p.product_id}>
                       {p.name} — {p.current_stock} {p.unit} in stock
+                      {p.tiers.length > 0 ? " · tiered" : ""}
                     </SelectItem>
                   ))
                 )}
@@ -155,41 +177,48 @@ export function SaleForm({
                   No items yet. Add products above.
                 </p>
               ) : (
-                cart.map((l) => (
-                  <div key={l.product_id} className="grid grid-cols-12 items-center gap-2 border-b px-3 py-2 text-sm last:border-0">
-                    <div className="col-span-5">
-                      <div className="font-medium">{l.name}</div>
-                      <div className="text-xs text-muted-foreground">{l.available} {l.unit} available</div>
+                cart.map((l) => {
+                  const p = productMap.get(l.product_id);
+                  const tiered = p && p.tiers.length > 0;
+                  return (
+                    <div key={l.product_id} className="grid grid-cols-12 items-center gap-2 border-b px-3 py-2 text-sm last:border-0">
+                      <div className="col-span-5">
+                        <div className="font-medium">{l.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {l.available} {l.unit} available
+                          {tiered ? " · price auto-set by quantity" : ""}
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={l.available}
+                          value={l.quantity}
+                          onChange={(e) => changeQuantity(l.product_id, Number(e.target.value))}
+                          className={l.quantity > l.available ? "border-destructive" : ""}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={paiseToRupees(l.unit_price_paise)}
+                          onChange={(e) => changePrice(l.product_id, rupeesToPaise(Number(e.target.value) || 0))}
+                          className="text-right"
+                        />
+                      </div>
+                      <div className="col-span-2 text-right font-medium">
+                        {formatPaise(l.quantity * l.unit_price_paise)}
+                      </div>
+                      <div className="col-span-1 text-right">
+                        <Button size="icon" variant="ghost" onClick={() => removeLine(l.product_id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={l.available}
-                        value={l.quantity}
-                        onChange={(e) => updateLine(l.product_id, { quantity: Number(e.target.value) })}
-                        className={l.quantity > l.available ? "border-destructive" : ""}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={paiseToRupees(l.unit_price_paise)}
-                        onChange={(e) => updateLine(l.product_id, { unit_price_paise: rupeesToPaise(Number(e.target.value) || 0) })}
-                        className="text-right"
-                      />
-                    </div>
-                    <div className="col-span-2 text-right font-medium">
-                      {formatPaise(l.quantity * l.unit_price_paise)}
-                    </div>
-                    <div className="col-span-1 text-right">
-                      <Button size="icon" variant="ghost" onClick={() => removeLine(l.product_id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </CardContent>
@@ -205,7 +234,7 @@ export function SaleForm({
               <Select value={customerId} onValueChange={setCustomerId}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="walk-in">Walk-in (retail)</SelectItem>
+                  <SelectItem value="walk-in">Walk-in</SelectItem>
                   {customers.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name} ({c.customer_type})
@@ -213,7 +242,6 @@ export function SaleForm({
                   ))}
                 </SelectContent>
               </Select>
-              {isWholesale && <p className="text-xs text-muted-foreground">Wholesale pricing applied to new lines.</p>}
             </div>
 
             <div className="space-y-1">

@@ -14,18 +14,26 @@ const positiveInt = z.coerce
   .min(0, "Cannot be negative");
 
 // ---- Product ----------------------------------------------------------------
+// A quantity price tier: "buy >= min_quantity, pay this price".
+export const priceTierSchema = z.object({
+  min_quantity: z.coerce.number().int().min(1, "Min qty ≥ 1"),
+  price: rupees,
+});
+
 export const productSchema = z.object({
   name: z.string().min(2, "Name is required"),
   brand: z.string().optional().or(z.literal("")),
   size: z.string().optional().or(z.literal("")),
   type: z.string().optional().or(z.literal("")),
   unit: z.string().min(1, "Unit is required").default("piece"),
-  selling_price: rupees,
-  wholesale_price: rupees,
+  selling_price: rupees, // base price (used below the smallest tier)
+  wholesale_price: rupees.optional().default(0),
   cost_price: rupees,
   reorder_point: positiveInt.default(0),
   gst_rate: z.coerce.number().min(0).max(100).default(0),
   hsn_code: z.string().optional().or(z.literal("")),
+  // Optional quantity-based tiers, e.g. [{min_quantity:20, price:18}, {min_quantity:1000, price:15}]
+  tiers: z.array(priceTierSchema).default([]),
 });
 export type ProductFormValues = z.infer<typeof productSchema>;
 
@@ -97,10 +105,14 @@ export const purchaseLineSchema = z.object({
   batch_no: z.string().optional().or(z.literal("")),
   expiry_date: z.string().optional().or(z.literal("")),
 });
+export const purchaseChargeSchema = z.object({
+  label: z.string().min(1, "Label required"),
+  amount: rupees,
+});
 export const purchaseSchema = z.object({
   supplier_id: z.string().uuid().nullable().optional(),
   invoice_no: z.string().optional().or(z.literal("")),
-  transport_cost: rupees.default(0),
+  charges: z.array(purchaseChargeSchema).default([]),
   items: z.array(purchaseLineSchema).min(1, "Add at least one product"),
 });
 export type PurchaseFormValues = z.infer<typeof purchaseSchema>;
