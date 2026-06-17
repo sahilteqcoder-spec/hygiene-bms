@@ -14,15 +14,16 @@ export default async function AppLayout({
   const supabase = await createClient();
   const { data: settings } = await supabase
     .from("business_settings")
-    .select("business_name")
+    .select("business_name, logo_url")
     .single();
 
   const businessName = settings?.business_name ?? "Hygiene BMS";
+  const logoUrl = settings?.logo_url ?? null;
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
-      <Sidebar role={user.role} businessName={businessName} />
+      <Sidebar role={user.role} businessName={businessName} logoUrl={logoUrl} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={user} businessName={businessName} />
+        <Header user={user} businessName={businessName} logoUrl={logoUrl} />
         <main className="flex-1 overflow-y-auto p-3 md:p-6">{children}</main>
       </div>
     </div>

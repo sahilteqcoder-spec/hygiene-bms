@@ -8,11 +8,20 @@ import { cn } from "@/lib/utils";
 import { canAccess } from "@/lib/permissions";
 import type { UserRole } from "@/types/database";
 import { NAV } from "@/components/nav-config";
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // Hamburger + slide-out drawer shown only on mobile (the Sidebar is hidden < md).
-export function MobileNav({ role, businessName }: { role: UserRole; businessName: string }) {
+export function MobileNav({
+  role,
+  businessName,
+  logoUrl,
+}: {
+  role: UserRole;
+  businessName: string;
+  logoUrl: string | null;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const items = NAV.filter((i) => canAccess(role, i.module));
@@ -26,9 +35,7 @@ export function MobileNav({ role, businessName }: { role: UserRole; businessName
       </SheetTrigger>
       <SheetContent side="left" className="p-0">
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-            HB
-          </div>
+          <BrandMark logoUrl={logoUrl} businessName={businessName} />
           <SheetTitle className="truncate text-sm">{businessName}</SheetTitle>
         </div>
         <nav className="space-y-1 p-2">

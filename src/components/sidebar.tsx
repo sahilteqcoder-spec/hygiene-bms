@@ -6,17 +6,24 @@ import { cn } from "@/lib/utils";
 import { canAccess } from "@/lib/permissions";
 import type { UserRole } from "@/types/database";
 import { NAV } from "@/components/nav-config";
+import { BrandMark } from "@/components/brand-mark";
 
-export function Sidebar({ role, businessName }: { role: UserRole; businessName: string }) {
+export function Sidebar({
+  role,
+  businessName,
+  logoUrl,
+}: {
+  role: UserRole;
+  businessName: string;
+  logoUrl: string | null;
+}) {
   const pathname = usePathname();
   const items = NAV.filter((i) => canAccess(role, i.module));
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-card md:flex">
       <div className="flex h-14 items-center gap-2 border-b px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-          HB
-        </div>
+        <BrandMark logoUrl={logoUrl} businessName={businessName} />
         <span className="truncate text-sm font-semibold">{businessName}</span>
       </div>
       <nav className="flex-1 space-y-1 p-2">

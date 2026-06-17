@@ -21,12 +21,20 @@ function titleFromPath(path: string): string {
   return seg.charAt(0).toUpperCase() + seg.slice(1);
 }
 
-export function Header({ user, businessName }: { user: AppUser; businessName: string }) {
+export function Header({
+  user,
+  businessName,
+  logoUrl,
+}: {
+  user: AppUser;
+  businessName: string;
+  logoUrl: string | null;
+}) {
   const pathname = usePathname();
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-3 md:px-6">
       <div className="flex items-center gap-1">
-        <MobileNav role={user.role} businessName={businessName} />
+        <MobileNav role={user.role} businessName={businessName} logoUrl={logoUrl} />
         <h1 className="text-base font-semibold md:text-lg">{titleFromPath(pathname)}</h1>
       </div>
       <div className="flex items-center gap-1">
