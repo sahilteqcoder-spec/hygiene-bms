@@ -35,7 +35,6 @@ export async function saveProduct(
     reorder_point: v.reorder_point,
     gst_rate: v.gst_rate,
     hsn_code: v.hsn_code || null,
-    barcode: v.barcode || null,
   };
 
   const supabase = await createClient();

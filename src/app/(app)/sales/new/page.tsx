@@ -11,7 +11,7 @@ export default async function NewSalePage() {
   const [{ data: stock }, { data: customers }, { data: tiers }] = await Promise.all([
     supabase
       .from("current_stock_view")
-      .select("product_id, name, unit, current_stock, selling_price_paise, barcode")
+      .select("product_id, name, unit, current_stock, selling_price_paise")
       .order("name"),
     supabase
       .from("customers")
@@ -32,7 +32,6 @@ export default async function NewSalePage() {
     unit: p.unit,
     current_stock: p.current_stock,
     selling_price_paise: p.selling_price_paise,
-    barcode: p.barcode,
     tiers: tiersByProduct[p.product_id] ?? [],
   }));
 

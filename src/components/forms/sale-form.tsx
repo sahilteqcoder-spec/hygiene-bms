@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, ShoppingCart, ScanLine, Plus } from "lucide-react";
+import { Trash2, ShoppingCart, Plus } from "lucide-react";
 import type { CartLine } from "@/types/sales";
 import { CustomerForm } from "@/components/forms/customer-form";
 import { formatPaise, paiseToRupees, rupeesToPaise } from "@/lib/format";
@@ -31,7 +31,6 @@ interface ProductOption {
   unit: string;
   current_stock: number;
   selling_price_paise: number; // base price
-  barcode: string | null;
   tiers: PriceTierLite[];
 }
 interface CustomerOption {
@@ -55,7 +54,6 @@ export function SaleForm({
   const [discountRupees, setDiscountRupees] = useState<string>("0");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [picker, setPicker] = useState<string>("");
-  const [barcode, setBarcode] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   const productMap = useMemo(
@@ -104,23 +102,6 @@ export function SaleForm({
     const p = productMap.get(productId);
     if (p) addToCart(p);
     setPicker("");
-  }
-
-  // Barcode scan / manual entry → add the matching product (increment if present).
-  function addByBarcode() {
-    const code = barcode.trim();
-    if (!code) return;
-    const p = products.find((x) => (x.barcode ?? "").toLowerCase() === code.toLowerCase());
-    setBarcode("");
-    if (!p) {
-      toast({ variant: "destructive", title: "Not found", description: `No product with barcode ${code}` });
-      return;
-    }
-    if (p.current_stock <= 0) {
-      toast({ variant: "destructive", title: "Out of stock", description: p.name });
-      return;
-    }
-    addToCart(p);
   }
 
   // Changing quantity re-applies the tier price automatically.
@@ -179,31 +160,7 @@ export function SaleForm({
       <div className="space-y-4 lg:col-span-2">
         <Card>
           <CardContent className="space-y-3 p-4">
-            <div className="space-y-1">
-              <Label>Scan / enter barcode</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <ScanLine className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addByBarcode();
-                      }
-                    }}
-                    placeholder="Scan barcode and press Enter…"
-                    className="pl-8"
-                  />
-                </div>
-                <Button type="button" variant="outline" onClick={addByBarcode}>
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            <Label>…or pick a product</Label>
+            <Label>Add product</Label>
             <Select value={picker} onValueChange={addProduct}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a product to add to the bill…" />

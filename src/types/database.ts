@@ -39,7 +39,6 @@ interface ProductRow {
   reorder_point: number;
   gst_rate: number;
   hsn_code: string | null;
-  barcode: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -174,7 +173,6 @@ interface CurrentStockRow {
   current_stock: number;
   is_low_stock: boolean;
   stock_value_paise: number;
-  barcode: string | null;
 }
 interface CustomerOutstandingRow {
   customer_id: string;

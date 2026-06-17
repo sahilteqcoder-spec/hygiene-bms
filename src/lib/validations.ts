@@ -32,7 +32,6 @@ export const productSchema = z.object({
   reorder_point: positiveInt.default(0),
   gst_rate: z.coerce.number().min(0).max(100).default(0),
   hsn_code: z.string().optional().or(z.literal("")),
-  barcode: z.string().optional().or(z.literal("")),
   // Optional quantity-based tiers, e.g. [{min_quantity:20, price:18}, {min_quantity:1000, price:15}]
   tiers: z.array(priceTierSchema).default([]),
 });

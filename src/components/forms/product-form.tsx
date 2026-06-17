@@ -68,7 +68,6 @@ export function ProductForm({
           reorder_point: product.reorder_point,
           gst_rate: product.gst_rate,
           hsn_code: product.hsn_code ?? "",
-          barcode: product.barcode ?? "",
           tiers: (tiers ?? [])
             .slice()
             .sort((a, b) => a.min_quantity - b.min_quantity)
@@ -133,11 +132,6 @@ export function ProductForm({
           <Field label="HSN code" error={errors.hsn_code?.message}>
             <Input {...register("hsn_code")} placeholder="9619" />
           </Field>
-          <div className="col-span-2">
-            <Field label="Barcode (for scan / quick-add)" error={errors.barcode?.message}>
-              <Input {...register("barcode")} placeholder="Scan or type the product barcode" />
-            </Field>
-          </div>
 
           {/* Quantity price tiers */}
           <div className="col-span-2 space-y-2 rounded-md border p-3">
