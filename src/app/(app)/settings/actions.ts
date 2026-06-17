@@ -50,6 +50,53 @@ export async function updateSettings(values: unknown): Promise<ActionResult> {
   return { ok: true };
 }
 
+// ---- Business logo ----------------------------------------------------------
+export async function uploadLogo(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireOwner();
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose an image file" };
+  if (file.size > 2_000_000) return { ok: false, error: "Image must be under 2 MB" };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "Only image files are allowed" };
+
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
+  const path = `logo-${Date.now()}.${ext}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  const supabase = await createClient();
+  const { error: upErr } = await supabase.storage
+    .from("branding")
+    .upload(path, bytes, { contentType: file.type, upsert: true });
+  if (upErr) return { ok: false, error: upErr.message };
+
+  const { data: pub } = supabase.storage.from("branding").getPublicUrl(path);
+  const { error } = await supabase
+    .from("business_settings")
+    .update({ logo_url: pub.publicUrl })
+    .eq("id", true);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function removeLogo(): Promise<ActionResult> {
+  try {
+    await requireOwner();
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_settings").update({ logo_url: null }).eq("id", true);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
 export async function createUser(values: unknown): Promise<ActionResult> {
   try {
     await requireOwner();

@@ -11,6 +11,10 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
     <div className="print-area mx-auto max-w-3xl rounded-lg border bg-white p-5 text-sm text-black shadow-sm sm:p-8 md:p-10">
       <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-0.5">
+          {b.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={b.logo_url} alt={b.business_name} className="mb-2 h-12 w-auto object-contain" />
+          )}
           <h1 className="text-lg font-bold sm:text-xl">{b.business_name}</h1>
           {b.address && <p className="text-xs text-gray-600">{b.address}</p>}
           <p className="text-xs text-gray-600">

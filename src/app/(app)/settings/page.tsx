@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SettingsForm } from "@/components/forms/settings-form";
 import { UsersManager } from "./users-manager";
+import { LogoUploader } from "./logo-uploader";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,8 @@ export default async function SettingsPage() {
           <TabsTrigger value="business">Business &amp; GST</TabsTrigger>
           <TabsTrigger value="users">Users &amp; Roles</TabsTrigger>
         </TabsList>
-        <TabsContent value="business" className="mt-4">
+        <TabsContent value="business" className="mt-4 space-y-4">
+          {settings && <LogoUploader logoUrl={settings.logo_url} />}
           {settings && <SettingsForm settings={settings} />}
         </TabsContent>
         <TabsContent value="users" className="mt-4">

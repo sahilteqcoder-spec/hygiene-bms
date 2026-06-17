@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import type { Database } from "@/types/database";
 
 type Settings = Database["public"]["Tables"]["business_settings"]["Row"];
@@ -68,6 +68,9 @@ export function PriceListPdf({
         {/* Letterhead */}
         <View style={[s.between, s.headerBlock]}>
           <View>
+            {business.logo_url ? (
+              <Image src={business.logo_url} style={{ height: 38, width: 100, objectFit: "contain", marginBottom: 5 }} />
+            ) : null}
             <Text style={s.h1}>{business.business_name}</Text>
             {business.address ? <Text style={s.muted}>{business.address}</Text> : null}
             <Text style={s.muted}>

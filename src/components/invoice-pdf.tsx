@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import type { InvoiceVM } from "@/lib/invoice";
 
 const rupee = (paise: number) =>
@@ -37,6 +37,7 @@ export function InvoicePdf({ vm }: { vm: InvoiceVM }) {
       <Page size="A4" style={s.page}>
         <View style={[s.between, s.border]}>
           <View>
+            {b.logo_url ? <Image src={b.logo_url} style={{ height: 36, width: 90, objectFit: "contain", marginBottom: 4 }} /> : null}
             <Text style={s.h1}>{b.business_name}</Text>
             {b.address ? <Text style={s.muted}>{b.address}</Text> : null}
             <Text style={s.muted}>
