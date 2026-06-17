@@ -3,9 +3,32 @@ import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
-import { PriceListPdf, type PriceListProduct } from "@/components/price-list-pdf";
+import { PriceListPdf, type PriceListProduct, type PriceRow } from "@/components/price-list-pdf";
 
 export const runtime = "nodejs";
+
+// Convert base price + sorted tiers into readable quantity ranges:
+//   base + [{20,650},{100,550}]  ->  "1–19": base, "20–99": 650, "100+": 550
+function buildPriceRows(
+  basePaise: number,
+  tiers: { min_quantity: number; price_paise: number }[]
+): PriceRow[] {
+  const sorted = [...tiers].sort((a, b) => a.min_quantity - b.min_quantity);
+  const rows: PriceRow[] = [];
+  let startQty = 1;
+  let price = basePaise;
+
+  for (const t of sorted) {
+    const endQty = t.min_quantity - 1;
+    if (endQty >= startQty) {
+      rows.push({ label: startQty === endQty ? `${startQty}` : `${startQty}–${endQty}`, price_paise: price });
+    }
+    startQty = t.min_quantity;
+    price = t.price_paise;
+  }
+  rows.push({ label: rows.length === 0 ? "Any qty" : `${startQty}+`, price_paise: price });
+  return rows;
+}
 
 // GET /api/price-list -> a shareable PDF of every active product's price
 // (base + quantity tiers). Useful to send customers on WhatsApp/email.
@@ -38,8 +61,7 @@ export async function GET() {
     name: p.name,
     sub: [p.brand, p.size, p.type].filter(Boolean).join(" · "),
     unit: p.unit,
-    base_paise: p.selling_price_paise,
-    tiers: (tiersByProduct.get(p.id) ?? []).sort((a, b) => a.min_quantity - b.min_quantity),
+    rows: buildPriceRows(p.selling_price_paise, tiersByProduct.get(p.id) ?? []),
   }));
 
   const date = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });

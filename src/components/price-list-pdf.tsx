@@ -3,36 +3,54 @@ import type { Database } from "@/types/database";
 
 type Settings = Database["public"]["Tables"]["business_settings"]["Row"];
 
+export interface PriceRow {
+  label: string; // e.g. "1–9", "20+"
+  price_paise: number;
+}
 export interface PriceListProduct {
   name: string;
   sub: string; // brand · size · type
   unit: string;
-  base_paise: number;
-  tiers: { min_quantity: number; price_paise: number }[];
+  rows: PriceRow[];
 }
 
 const rupee = (paise: number) =>
-  "Rs. " + (paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  (paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const s = StyleSheet.create({
-  page: { padding: 32, fontSize: 9, color: "#111", fontFamily: "Helvetica" },
-  between: { flexDirection: "row", justifyContent: "space-between" },
-  h1: { fontSize: 16, fontFamily: "Helvetica-Bold" },
-  h2: { fontSize: 13, fontFamily: "Helvetica-Bold" },
-  muted: { color: "#555" },
+  page: { padding: 30, fontSize: 9, color: "#1f2937", fontFamily: "Helvetica" },
+  between: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  h1: { fontSize: 17, fontFamily: "Helvetica-Bold", color: "#111827" },
+  h2: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#4f46e5" },
+  muted: { color: "#6b7280" },
   bold: { fontFamily: "Helvetica-Bold" },
-  headerBlock: { borderBottomWidth: 1, borderColor: "#ccc", paddingBottom: 8, marginBottom: 10 },
-  row: {
+
+  headerBlock: { borderBottomWidth: 2, borderColor: "#4f46e5", paddingBottom: 10, marginBottom: 14 },
+
+  colHead: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-    paddingVertical: 6,
+    backgroundColor: "#eef2ff",
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 3,
   },
-  left: { width: "55%", paddingRight: 8 },
-  right: { width: "45%" },
-  priceLine: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 1 },
-  footer: { marginTop: 24, textAlign: "center", color: "#888", fontSize: 8, borderTopWidth: 1, borderColor: "#eee", paddingTop: 8 },
+  colHeadText: { fontFamily: "Helvetica-Bold", color: "#3730a3", fontSize: 8 },
+
+  row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 7, paddingHorizontal: 8 },
+  rowAlt: { backgroundColor: "#f9fafb" },
+
+  left: { width: "52%", paddingRight: 8 },
+  name: { fontFamily: "Helvetica-Bold", fontSize: 10, color: "#111827" },
+  sub: { color: "#6b7280", fontSize: 8, marginTop: 1 },
+
+  priceBox: { width: 175 },
+  priceLine: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 1.5 },
+  qtyText: { color: "#374151" },
+  priceText: { fontFamily: "Helvetica-Bold", color: "#111827" },
+  rs: { color: "#6b7280", fontSize: 7 },
+
+  footer: { marginTop: 22, textAlign: "center", color: "#9ca3af", fontSize: 8, borderTopWidth: 1, borderColor: "#e5e7eb", paddingTop: 8 },
 });
 
 export function PriceListPdf({
@@ -47,44 +65,49 @@ export function PriceListPdf({
   return (
     <Document title={`Price List - ${business.business_name}`}>
       <Page size="A4" style={s.page} wrap>
+        {/* Letterhead */}
         <View style={[s.between, s.headerBlock]}>
           <View>
             <Text style={s.h1}>{business.business_name}</Text>
             {business.address ? <Text style={s.muted}>{business.address}</Text> : null}
             <Text style={s.muted}>
-              {business.phone ? `Ph: ${business.phone}  ` : ""}
-              {business.email ?? ""}
+              {business.phone ? `Ph: ${business.phone}` : ""}
+              {business.email ? `   ${business.email}` : ""}
             </Text>
-            {business.gstin ? <Text>GSTIN: {business.gstin}</Text> : null}
+            {business.gstin ? <Text style={s.muted}>GSTIN: {business.gstin}</Text> : null}
           </View>
-          <View style={{ textAlign: "right" }}>
+          <View style={{ alignItems: "flex-end" }}>
             <Text style={s.h2}>PRICE LIST</Text>
             <Text style={s.muted}>As on {date}</Text>
           </View>
         </View>
 
-        {/* Column captions */}
-        <View style={[s.between, { paddingBottom: 4 }]}>
-          <Text style={[s.left, s.bold]}>Product</Text>
-          <Text style={[s.right, s.bold, { textAlign: "right" }]}>Price (per piece)</Text>
+        {/* Column headings */}
+        <View style={s.colHead}>
+          <Text style={[s.colHeadText, s.left]}>PRODUCT</Text>
+          <View style={s.priceBox}>
+            <View style={s.priceLine}>
+              <Text style={s.colHeadText}>Qty (pcs)</Text>
+              <Text style={s.colHeadText}>Price / piece</Text>
+            </View>
+          </View>
         </View>
 
+        {/* Product rows */}
         {products.map((p, i) => (
-          <View key={i} style={s.row} wrap={false}>
+          <View key={i} style={[s.row, i % 2 === 1 ? s.rowAlt : {}]} wrap={false}>
             <View style={s.left}>
-              <Text style={s.bold}>{p.name}</Text>
-              {p.sub ? <Text style={s.muted}>{p.sub}</Text> : null}
-              <Text style={s.muted}>Unit: {p.unit}</Text>
+              <Text style={s.name}>{p.name}</Text>
+              {p.sub ? <Text style={s.sub}>{p.sub}</Text> : null}
             </View>
-            <View style={s.right}>
-              <View style={s.priceLine}>
-                <Text style={s.muted}>1+ {p.unit}</Text>
-                <Text style={s.bold}>{rupee(p.base_paise)}</Text>
-              </View>
-              {p.tiers.map((t, j) => (
+            <View style={s.priceBox}>
+              {p.rows.map((r, j) => (
                 <View key={j} style={s.priceLine}>
-                  <Text style={s.muted}>{t.min_quantity}+ {p.unit}</Text>
-                  <Text>{rupee(t.price_paise)}</Text>
+                  <Text style={s.qtyText}>{r.label}</Text>
+                  <Text style={s.priceText}>
+                    <Text style={s.rs}>Rs. </Text>
+                    {rupee(r.price_paise)}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -92,7 +115,7 @@ export function PriceListPdf({
         ))}
 
         <Text style={s.footer}>
-          Prices are per piece and subject to change. Generated by {business.business_name}.
+          All prices are per piece and subject to change · Generated by {business.business_name} on {date}
         </Text>
       </Page>
     </Document>
