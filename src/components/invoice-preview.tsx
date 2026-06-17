@@ -9,13 +9,13 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
 
   return (
     <div className="print-area mx-auto max-w-3xl rounded-lg border bg-white p-5 text-sm text-black shadow-sm sm:p-8 md:p-10">
-      <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 border-b-2 border-[#1F2D50] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-0.5">
           {b.logo_url && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={b.logo_url} alt={b.business_name} className="mb-2 h-12 w-auto object-contain" />
           )}
-          <h1 className="text-lg font-bold sm:text-xl">{b.business_name}</h1>
+          <h1 className="text-lg font-bold text-[#1F2D50] sm:text-xl">{b.business_name}</h1>
           {b.address && <p className="text-xs text-gray-600">{b.address}</p>}
           <p className="text-xs text-gray-600">
             {b.phone && <>☎ {b.phone} </>}
@@ -24,7 +24,7 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
           {b.gstin && <p className="pt-1 text-xs">GSTIN: <span className="font-medium">{b.gstin}</span></p>}
         </div>
         <div className="space-y-0.5 sm:text-right">
-          <h2 className="text-base font-semibold sm:text-lg">{hasGst ? "TAX INVOICE" : "INVOICE"}</h2>
+          <h2 className="text-base font-semibold text-[#B5835A] sm:text-lg">{hasGst ? "TAX INVOICE" : "INVOICE"}</h2>
           <p className="text-xs">No: <span className="font-medium">{vm.invoiceNo}</span></p>
           <p className="text-xs">Date: {formatDateTime(vm.date)}</p>
           <p className="text-xs capitalize">Payment: {vm.paymentMode}</p>
@@ -48,7 +48,7 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
       <div className="overflow-x-auto">
       <table className="w-full min-w-[460px] border-collapse text-xs">
         <thead>
-          <tr className="border-y bg-gray-50 text-left">
+          <tr className="bg-[#1F2D50] text-left text-white">
             <th className="p-2">#</th>
             <th className="p-2">Item</th>
             <th className="p-2">HSN</th>
@@ -84,7 +84,7 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
             <Row label="SGST" value={formatPaise(vm.sgstPaise)} />
           </>
         )}
-        <div className="mt-1 flex justify-between border-t pt-2 text-sm font-bold">
+        <div className="mt-1 flex justify-between border-t-2 border-[#1F2D50] pt-2 text-sm font-bold text-[#1F2D50]">
           <span>Grand Total</span>
           <span>{formatPaise(vm.totalPaise)}</span>
         </div>

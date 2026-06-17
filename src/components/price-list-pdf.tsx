@@ -20,34 +20,34 @@ const rupee = (paise: number) =>
 const s = StyleSheet.create({
   page: { padding: 30, fontSize: 9, color: "#1f2937", fontFamily: "Helvetica" },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  h1: { fontSize: 17, fontFamily: "Helvetica-Bold", color: "#111827" },
-  h2: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#4f46e5" },
+  h1: { fontSize: 17, fontFamily: "Helvetica-Bold", color: "#1F2D50" },
+  h2: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#B5835A" },
   muted: { color: "#6b7280" },
   bold: { fontFamily: "Helvetica-Bold" },
 
-  headerBlock: { borderBottomWidth: 2, borderColor: "#4f46e5", paddingBottom: 10, marginBottom: 14 },
+  headerBlock: { borderBottomWidth: 2, borderColor: "#1F2D50", paddingBottom: 10, marginBottom: 14 },
 
   colHead: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#eef2ff",
+    backgroundColor: "#1F2D50",
     paddingVertical: 5,
     paddingHorizontal: 8,
     borderRadius: 3,
   },
-  colHeadText: { fontFamily: "Helvetica-Bold", color: "#3730a3", fontSize: 8 },
+  colHeadText: { fontFamily: "Helvetica-Bold", color: "#ffffff", fontSize: 8 },
 
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 7, paddingHorizontal: 8 },
   rowAlt: { backgroundColor: "#f9fafb" },
 
   left: { width: "52%", paddingRight: 8 },
-  name: { fontFamily: "Helvetica-Bold", fontSize: 10, color: "#111827" },
+  name: { fontFamily: "Helvetica-Bold", fontSize: 10, color: "#1F2D50" },
   sub: { color: "#6b7280", fontSize: 8, marginTop: 1 },
 
   priceBox: { width: 175 },
   priceLine: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 1.5 },
   qtyText: { color: "#374151" },
-  priceText: { fontFamily: "Helvetica-Bold", color: "#111827" },
+  priceText: { fontFamily: "Helvetica-Bold", color: "#1F2D50" },
   rs: { color: "#6b7280", fontSize: 7 },
 
   footer: { marginTop: 22, textAlign: "center", color: "#9ca3af", fontSize: 8, borderTopWidth: 1, borderColor: "#e5e7eb", paddingTop: 8 },
