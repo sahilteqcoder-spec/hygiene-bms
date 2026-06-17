@@ -8,40 +8,41 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
   const hasGst = vm.gstPaise > 0;
 
   return (
-    <div className="print-area mx-auto max-w-3xl rounded-lg border bg-white p-8 text-sm text-black shadow-sm">
-      <div className="flex items-start justify-between border-b pb-4">
-        <div>
-          <h1 className="text-xl font-bold">{b.business_name}</h1>
+    <div className="print-area mx-auto max-w-3xl rounded-lg border bg-white p-5 text-sm text-black shadow-sm sm:p-8 md:p-10">
+      <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-0.5">
+          <h1 className="text-lg font-bold sm:text-xl">{b.business_name}</h1>
           {b.address && <p className="text-xs text-gray-600">{b.address}</p>}
           <p className="text-xs text-gray-600">
             {b.phone && <>☎ {b.phone} </>}
             {b.email && <>· {b.email}</>}
           </p>
-          {b.gstin && <p className="mt-1 text-xs">GSTIN: <span className="font-medium">{b.gstin}</span></p>}
+          {b.gstin && <p className="pt-1 text-xs">GSTIN: <span className="font-medium">{b.gstin}</span></p>}
         </div>
-        <div className="text-right">
-          <h2 className="text-lg font-semibold">{hasGst ? "TAX INVOICE" : "INVOICE"}</h2>
+        <div className="space-y-0.5 sm:text-right">
+          <h2 className="text-base font-semibold sm:text-lg">{hasGst ? "TAX INVOICE" : "INVOICE"}</h2>
           <p className="text-xs">No: <span className="font-medium">{vm.invoiceNo}</span></p>
           <p className="text-xs">Date: {formatDateTime(vm.date)}</p>
           <p className="text-xs capitalize">Payment: {vm.paymentMode}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 py-4">
+      <div className="flex flex-col gap-3 py-5 sm:flex-row sm:justify-between">
         <div>
-          <p className="text-xs font-semibold text-gray-500">BILL TO</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Bill To</p>
           <p className="font-medium">{vm.customerName}</p>
           {vm.customerPhone && <p className="text-xs text-gray-600">{vm.customerPhone}</p>}
           {vm.customerAddress && <p className="text-xs text-gray-600">{vm.customerAddress}</p>}
         </div>
         {b.state && (
-          <div className="text-right text-xs text-gray-600">
+          <div className="text-xs text-gray-600 sm:text-right">
             <p>Place of supply: {b.state} ({b.state_code})</p>
           </div>
         )}
       </div>
 
-      <table className="w-full border-collapse text-xs">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[460px] border-collapse text-xs">
         <thead>
           <tr className="border-y bg-gray-50 text-left">
             <th className="p-2">#</th>
@@ -67,8 +68,9 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
           ))}
         </tbody>
       </table>
+      </div>
 
-      <div className="ml-auto mt-4 w-64 space-y-1 text-xs">
+      <div className="ml-auto mt-5 w-full max-w-[16rem] space-y-1.5 text-xs">
         <Row label="Subtotal" value={formatPaise(vm.subtotalPaise)} />
         {vm.discountPaise > 0 && <Row label="Discount" value={`− ${formatPaise(vm.discountPaise)}`} />}
         {hasGst && (
@@ -78,13 +80,13 @@ export function InvoicePreview({ vm }: { vm: InvoiceVM }) {
             <Row label="SGST" value={formatPaise(vm.sgstPaise)} />
           </>
         )}
-        <div className="flex justify-between border-t pt-1 text-sm font-bold">
+        <div className="mt-1 flex justify-between border-t pt-2 text-sm font-bold">
           <span>Grand Total</span>
           <span>{formatPaise(vm.totalPaise)}</span>
         </div>
       </div>
 
-      <p className="mt-8 border-t pt-4 text-center text-[10px] text-gray-500">
+      <p className="mt-10 border-t pt-5 text-center text-[10px] text-gray-500">
         This is a computer-generated invoice. Thank you for your business!
       </p>
     </div>

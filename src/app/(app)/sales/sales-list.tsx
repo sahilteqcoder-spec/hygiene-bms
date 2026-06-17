@@ -102,6 +102,46 @@ export function SalesList({
     }
   }
 
+  function rowActions(r: SaleRow) {
+    return (
+      <div className="flex justify-end gap-1">
+        <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>
+          <Eye className="h-4 w-4" /> View
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/sales/${r.id}`}>
+                <FileText className="h-4 w-4" /> Full invoice
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={`/api/invoices/${r.id}?store=1`} target="_blank" rel="noopener noreferrer">
+                <Download className="h-4 w-4" /> Download PDF
+              </a>
+            </DropdownMenuItem>
+            {canDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={() => handleDelete(r.id, r.invoice_no)}
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Toolbar */}
@@ -129,8 +169,8 @@ export function SalesList({
         </Select>
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card">
+      {/* Desktop table */}
+      <div className="hidden rounded-lg border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -161,48 +201,42 @@ export function SalesList({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">{formatPaise(r.total_paise)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>
-                        <Eye className="h-4 w-4" /> View
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/sales/${r.id}`}>
-                              <FileText className="h-4 w-4" /> Full invoice
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <a href={`/api/invoices/${r.id}?store=1`} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4" /> Download PDF
-                            </a>
-                          </DropdownMenuItem>
-                          {canDelete && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onSelect={() => handleDelete(r.id, r.invoice_no)}
-                              >
-                                <Trash2 className="h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
+                  <TableCell className="text-right">{rowActions(r)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="space-y-2 md:hidden">
+        {rows.length === 0 ? (
+          <p className="rounded-lg border bg-card py-10 text-center text-sm text-muted-foreground">
+            No invoices found.
+          </p>
+        ) : (
+          rows.map((r) => (
+            <div key={r.id} className="rounded-lg border bg-card p-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-medium">{r.invoice_no}</div>
+                  <div className="text-xs text-muted-foreground">{r.customer_name}</div>
+                </div>
+                <Badge variant={MODE_VARIANT[r.payment_mode]} className="capitalize">
+                  {r.payment_mode}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t pt-2">
+                <div className="text-sm">
+                  <div className="font-semibold">{formatPaise(r.total_paise)}</div>
+                  <div className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</div>
+                </div>
+                {rowActions(r)}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination */}

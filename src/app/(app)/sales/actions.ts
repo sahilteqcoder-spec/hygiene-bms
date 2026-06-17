@@ -35,6 +35,8 @@ export async function createSaleAction(values: unknown): Promise<CreateSaleResul
   revalidatePath("/sales");
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
+  revalidatePath("/customers");
+  if (v.customer_id) revalidatePath(`/customers/${v.customer_id}`);
   return { ok: true, saleId: result?.sale_id, invoiceNo: result?.invoice_no };
 }
 

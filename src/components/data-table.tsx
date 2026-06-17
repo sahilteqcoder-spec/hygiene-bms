@@ -83,7 +83,8 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
+      {/* Desktop: table */}
+      <div className="hidden rounded-lg border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -114,6 +115,32 @@ export function DataTable<T>({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile: stacked cards (label + value per column) */}
+      <div className="space-y-2 md:hidden">
+        {rows.length === 0 ? (
+          <p className="rounded-lg border bg-card py-10 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </p>
+        ) : (
+          rows.map((row) => (
+            <div key={rowKey(row)} className="rounded-lg border bg-card p-3">
+              {columns.map((col, i) =>
+                col.header ? (
+                  <div key={i} className="flex items-start justify-between gap-3 py-0.5 text-sm">
+                    <span className="shrink-0 text-xs text-muted-foreground">{col.header}</span>
+                    <span className="text-right">{col.cell(row)}</span>
+                  </div>
+                ) : (
+                  <div key={i} className="mt-2 flex justify-end border-t pt-2">
+                    {col.cell(row)}
+                  </div>
+                )
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       {filtered.length > pageSize && (
