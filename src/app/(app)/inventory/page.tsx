@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isOwner } from "@/lib/permissions";
 import { formatPaise, formatNumber } from "@/lib/format";
 import { StatCard } from "@/components/stat-card";
-import { Package, Boxes, AlertTriangle } from "lucide-react";
+import { Package, Boxes, AlertTriangle, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { InventoryClient } from "./inventory-client";
 import type { CurrentStock, Product, PriceTier } from "@/types/product";
 
@@ -32,6 +33,18 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold">Inventory</h2>
+          <p className="text-sm text-muted-foreground">Products, stock and pricing.</p>
+        </div>
+        <Button variant="outline" asChild>
+          <a href="/api/price-list" target="_blank" rel="noopener noreferrer">
+            <FileDown className="h-4 w-4" /> Price list PDF
+          </a>
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Products" value={formatNumber(rows.length)} icon={Package} />
         <StatCard label="Units in stock" value={formatNumber(totalUnits)} icon={Boxes} accent="sky" />
