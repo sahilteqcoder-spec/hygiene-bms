@@ -153,7 +153,25 @@ interface BusinessSettingsRow {
   invoice_prefix: string;
   default_gst_rate: number;
   logo_url: string | null;
+  upi_id: string | null;
   updated_at: string;
+}
+interface SaleReturnRow {
+  id: string;
+  sale_id: string;
+  customer_id: string | null;
+  total_paise: number;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+interface SaleReturnItemRow {
+  id: string;
+  return_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price_paise: number;
+  total_paise: number;
 }
 
 // ---- View row shapes --------------------------------------------------------
@@ -284,6 +302,16 @@ export interface Database {
         Partial<BusinessSettingsRow>,
         Partial<BusinessSettingsRow>
       >;
+      sale_returns: Table<
+        SaleReturnRow,
+        Omit<SaleReturnRow, "id" | "created_at"> & { id?: string },
+        Partial<SaleReturnRow>
+      >;
+      sale_return_items: Table<
+        SaleReturnItemRow,
+        Omit<SaleReturnItemRow, "id"> & { id?: string },
+        Partial<SaleReturnItemRow>
+      >;
     };
     Views: {
       current_stock_view: View<CurrentStockRow>;
@@ -316,6 +344,11 @@ export interface Database {
         Returns: number;
       };
       delete_sale: { Args: { p_sale_id: string }; Returns: undefined };
+      delete_purchase: { Args: { p_purchase_id: string }; Returns: undefined };
+      create_return: {
+        Args: { p_sale_id: string; p_items: { product_id: string; quantity: number; unit_price_paise: number }[]; p_note: string | null };
+        Returns: string;
+      };
       has_any_user: { Args: Record<string, never>; Returns: boolean };
       dashboard_summary: { Args: Record<string, never>; Returns: DashboardSummary };
       current_user_role: { Args: Record<string, never>; Returns: UserRole };

@@ -27,7 +27,7 @@ const s = StyleSheet.create({
   footer: { marginTop: 30, textAlign: "center", color: "#888", fontSize: 8, borderTopWidth: 1, borderColor: "#eee", paddingTop: 8 },
 });
 
-export function InvoicePdf({ vm }: { vm: InvoiceVM }) {
+export function InvoicePdf({ vm, upiQr }: { vm: InvoiceVM; upiQr?: string | null }) {
   const b = vm.business;
   const hasGst = vm.gstPaise > 0;
   const dateStr = new Date(vm.date).toLocaleString("en-IN");
@@ -35,6 +35,7 @@ export function InvoicePdf({ vm }: { vm: InvoiceVM }) {
   return (
     <Document title={vm.invoiceNo}>
       <Page size="A4" style={s.page}>
+        <View style={{ height: 5, backgroundColor: "#B5835A", borderRadius: 2, marginBottom: 8 }} />
         <View style={[s.between, s.border]}>
           <View>
             {b.logo_url ? <Image src={b.logo_url} style={{ height: 36, width: 90, objectFit: "contain", marginBottom: 4 }} /> : null}
@@ -117,6 +118,25 @@ export function InvoicePdf({ vm }: { vm: InvoiceVM }) {
           <View style={s.grand}>
             <Text style={s.bold}>Grand Total</Text>
             <Text style={s.bold}>{rupee(vm.totalPaise)}</Text>
+          </View>
+        </View>
+
+        {/* UPI QR + amount in words */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {upiQr ? (
+              <>
+                <Image src={upiQr} style={{ width: 70, height: 70 }} />
+                <View style={{ marginLeft: 6 }}>
+                  <Text style={[s.bold, { color: "#1F2D50" }]}>Scan to pay (UPI)</Text>
+                  <Text style={s.muted}>{b.upi_id}</Text>
+                </View>
+              </>
+            ) : null}
+          </View>
+          <View style={{ width: "55%" }}>
+            <Text style={s.muted}>Amount in words:</Text>
+            <Text style={s.bold}>{vm.amountInWords}</Text>
           </View>
         </View>
 

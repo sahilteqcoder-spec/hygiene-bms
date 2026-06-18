@@ -44,6 +44,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       state_code: settings.state_code ?? "",
       invoice_prefix: settings.invoice_prefix,
       default_gst_rate: settings.default_gst_rate,
+      upi_id: settings.upi_id ?? "",
     },
   });
 
@@ -97,6 +98,11 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           <Field label="Default GST rate (%)" error={errors.default_gst_rate?.message}>
             <Input type="number" step="0.01" {...register("default_gst_rate")} />
           </Field>
+          <div className="sm:col-span-3">
+            <Field label="UPI ID (for scan-to-pay QR on invoices)" error={errors.upi_id?.message}>
+              <Input {...register("upi_id")} placeholder="yourname@okhdfcbank" />
+            </Field>
+          </div>
         </CardContent>
       </Card>
 

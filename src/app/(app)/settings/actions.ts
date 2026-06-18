@@ -42,6 +42,7 @@ export async function updateSettings(values: unknown): Promise<ActionResult> {
       state_code: v.state_code || null,
       invoice_prefix: v.invoice_prefix,
       default_gst_rate: v.default_gst_rate,
+      upi_id: v.upi_id || null,
     })
     .eq("id", true);
 

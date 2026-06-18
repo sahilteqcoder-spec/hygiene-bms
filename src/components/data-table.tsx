@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Search } from "lucide-react";
+import { Search, Inbox } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -29,6 +29,8 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   pageSize?: number;
   emptyMessage?: string;
+  // Optional rich empty state (icon/CTA) shown when there are no rows at all.
+  emptyState?: ReactNode;
   toolbar?: ReactNode;
   rowKey: (row: T) => string;
 }
@@ -41,10 +43,17 @@ export function DataTable<T>({
   searchAccessor,
   searchPlaceholder = "Search…",
   pageSize = 10,
-  emptyMessage = "No records found.",
+  emptyMessage = "Nothing here yet.",
+  emptyState,
   toolbar,
   rowKey,
 }: DataTableProps<T>) {
+  const empty = (
+    <div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
+      <Inbox className="h-8 w-8 opacity-40" />
+      {emptyState ?? <p className="text-sm">{emptyMessage}</p>}
+    </div>
+  );
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const debounced = useDebounce(query, 250);
@@ -98,9 +107,7 @@ export function DataTable<T>({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {emptyMessage}
-                </TableCell>
+                <TableCell colSpan={columns.length}>{empty}</TableCell>
               </TableRow>
             ) : (
               rows.map((row) => (
@@ -120,9 +127,7 @@ export function DataTable<T>({
       {/* Mobile: stacked cards (label + value per column) */}
       <div className="space-y-2 md:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-lg border bg-card py-10 text-center text-sm text-muted-foreground">
-            {emptyMessage}
-          </p>
+          <div className="rounded-lg border bg-card">{empty}</div>
         ) : (
           rows.map((row) => (
             <div key={rowKey(row)} className="rounded-lg border bg-card p-3">

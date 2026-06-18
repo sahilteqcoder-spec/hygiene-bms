@@ -128,6 +128,7 @@ export const settingsSchema = z.object({
   state_code: z.string().optional().or(z.literal("")),
   invoice_prefix: z.string().min(1, "Prefix is required").default("INV"),
   default_gst_rate: z.coerce.number().min(0).max(100).default(0),
+  upi_id: z.string().optional().or(z.literal("")),
 });
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 

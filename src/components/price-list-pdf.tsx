@@ -65,6 +65,7 @@ export function PriceListPdf({
   return (
     <Document title={`Price List - ${business.business_name}`}>
       <Page size="A4" style={s.page} wrap>
+        <View style={{ height: 5, backgroundColor: "#B5835A", borderRadius: 2, marginBottom: 8 }} />
         {/* Letterhead */}
         <View style={[s.between, s.headerBlock]}>
           <View>

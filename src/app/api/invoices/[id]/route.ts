@@ -4,6 +4,7 @@ import { createElement, type ReactElement } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { buildInvoiceVM, fetchSaleWithItems } from "@/lib/invoice";
+import { upiQrDataUrl } from "@/lib/upi";
 import { InvoicePdf } from "@/components/invoice-pdf";
 
 export const runtime = "nodejs";
@@ -27,7 +28,8 @@ export async function GET(
   if (!settings) return NextResponse.json({ error: "Settings missing" }, { status: 500 });
 
   const vm = buildInvoiceVM(sale, settings);
-  const element = createElement(InvoicePdf, { vm }) as ReactElement<DocumentProps>;
+  const upiQr = await upiQrDataUrl(settings.upi_id, settings.business_name, sale.total_paise);
+  const element = createElement(InvoicePdf, { vm, upiQr }) as ReactElement<DocumentProps>;
   const buffer = await renderToBuffer(element);
   const body = new Uint8Array(buffer);
 

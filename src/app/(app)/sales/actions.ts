@@ -40,6 +40,39 @@ export async function createSaleAction(values: unknown): Promise<CreateSaleResul
   return { ok: true, saleId: result?.sale_id, invoiceNo: result?.invoice_no };
 }
 
+export interface ReturnItemInput {
+  product_id: string;
+  quantity: number;
+  unit_price_paise: number;
+}
+
+export async function createReturnAction(
+  saleId: string,
+  items: ReturnItemInput[],
+  note: string
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const valid = items.filter((i) => i.quantity > 0);
+  if (valid.length === 0) return { ok: false, error: "Enter a quantity to return" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_return", {
+    p_sale_id: saleId,
+    p_items: valid,
+    p_note: note || null,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/sales");
+  revalidatePath(`/sales/${saleId}`);
+  revalidatePath("/inventory");
+  revalidatePath("/dashboard");
+  revalidatePath("/customers");
+  return { ok: true };
+}
+
 export async function deleteSaleAction(id: string): Promise<{ ok: boolean; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Not authenticated" };

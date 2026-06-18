@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, FileText, Download, Trash2, Filter, MoreHorizontal, Search } from "lucide-react";
+import { Eye, FileText, Download, Trash2, Filter, MoreHorizontal, Search, Plus, ShoppingCart } from "lucide-react";
 import { formatPaise, formatDateTime } from "@/lib/format";
 import { useDebounce } from "@/hooks/use-debounce";
 import { SaleViewModal } from "@/components/sale-view-modal";
@@ -142,6 +142,21 @@ export function SalesList({
     );
   }
 
+  const filtering = !!q || mode !== "all";
+  const emptyBlock = (
+    <div className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
+      <ShoppingCart className="h-8 w-8 opacity-40" />
+      <p className="text-sm">{filtering ? "No invoices match your search." : "No sales yet — create your first bill."}</p>
+      {!filtering && (
+        <Button asChild size="sm">
+          <Link href="/sales/new">
+            <Plus className="h-4 w-4" /> New sale
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-3">
       {/* Toolbar */}
@@ -185,9 +200,7 @@ export function SalesList({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  No invoices found.
-                </TableCell>
+                <TableCell colSpan={6}>{emptyBlock}</TableCell>
               </TableRow>
             ) : (
               rows.map((r) => (
@@ -212,9 +225,7 @@ export function SalesList({
       {/* Mobile cards */}
       <div className="space-y-2 md:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-lg border bg-card py-10 text-center text-sm text-muted-foreground">
-            No invoices found.
-          </p>
+          <div className="rounded-lg border bg-card">{emptyBlock}</div>
         ) : (
           rows.map((r) => (
             <div key={r.id} className="rounded-lg border bg-card p-3">

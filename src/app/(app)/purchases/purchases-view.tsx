@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteSupplier } from "./actions";
+import { deleteSupplier, deletePurchase } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
 export interface PurchaseRow {
@@ -29,9 +29,11 @@ export interface PurchaseRow {
 export function PurchasesView({
   purchases,
   suppliers,
+  canDelete,
 }: {
   purchases: PurchaseRow[];
   suppliers: Supplier[];
+  canDelete: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -46,12 +48,45 @@ export function PurchasesView({
     }
   }
 
+  async function removePurchase(id: string, invoice: string | null) {
+    if (!confirm(`Delete purchase ${invoice ?? ""}? The added stock will be reversed.`)) return;
+    const res = await deletePurchase(id);
+    if (!res.ok) toast({ variant: "destructive", title: "Failed", description: res.error });
+    else {
+      toast({ variant: "success", title: "Purchase deleted", description: "Stock reversed." });
+      router.refresh();
+    }
+  }
+
   const purchaseCols: Column<PurchaseRow>[] = [
     { header: "Invoice", cell: (r) => <span className="font-medium">{r.invoice_no ?? "—"}</span> },
     { header: "Supplier", cell: (r) => r.supplier_name },
     { header: "Date", cell: (r) => formatDate(r.created_at), className: "text-muted-foreground" },
     { header: "Charges", cell: (r) => formatPaise(r.transport_cost_paise), className: "text-right text-muted-foreground" },
     { header: "Total", cell: (r) => formatPaise(r.total_amount_paise), className: "text-right font-medium" },
+    ...(canDelete
+      ? [
+          {
+            header: "",
+            className: "text-right",
+            cell: (r: PurchaseRow) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost">⋯</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => removePurchase(r.id, r.invoice_no)}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete purchase
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+          } as Column<PurchaseRow>,
+        ]
+      : []),
   ];
 
   const supplierCols: Column<Supplier>[] = [

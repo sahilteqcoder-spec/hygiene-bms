@@ -1,4 +1,5 @@
 import { gstFromInclusive } from "@/lib/calculations";
+import { rupeesInWords } from "@/lib/words";
 import type { SaleWithItems } from "@/types/sales";
 import type { Database } from "@/types/database";
 
@@ -31,6 +32,7 @@ export interface InvoiceVM {
   sgstPaise: number;
   gstPaise: number;
   totalPaise: number;
+  amountInWords: string;
 }
 
 // Builds a fully-computed invoice from a sale, splitting GST per line
@@ -69,6 +71,7 @@ export function buildInvoiceVM(sale: SaleWithItems, settings: Settings): Invoice
     sgstPaise: gstTotal - half,
     gstPaise: gstTotal,
     totalPaise: sale.total_paise,
+    amountInWords: rupeesInWords(sale.total_paise),
   };
 }
 

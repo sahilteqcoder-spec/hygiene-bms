@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -51,6 +58,7 @@ export function ProductForm({
     handleSubmit,
     control,
     watch,
+    setValue,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
@@ -115,7 +123,14 @@ export function ProductForm({
             <Input {...register("size")} placeholder="XL" />
           </Field>
           <Field label="Unit" error={errors.unit?.message}>
-            <Input {...register("unit")} placeholder="pack" />
+            <Select value={watch("unit")} onValueChange={(v) => setValue("unit", v)}>
+              <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
+              <SelectContent>
+                {["piece", "pack", "box", "packet", "bottle", "strip", "dozen", "kg", "gram", "litre", "ml"].map((u) => (
+                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Base price (₹)" error={errors.selling_price?.message}>
             <Input type="number" step="0.01" {...register("selling_price")} />

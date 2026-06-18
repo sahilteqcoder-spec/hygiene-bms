@@ -46,7 +46,7 @@ export default async function PurchasesPage() {
           </Link>
         </Button>
       </div>
-      <PurchasesView purchases={rows} suppliers={(suppliers ?? []) as Supplier[]} />
+      <PurchasesView purchases={rows} suppliers={(suppliers ?? []) as Supplier[]} canDelete={isOwner(user.role)} />
     </div>
   );
 }

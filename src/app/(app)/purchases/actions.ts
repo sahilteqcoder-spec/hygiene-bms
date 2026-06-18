@@ -33,6 +33,19 @@ export async function saveSupplier(id: string | null, values: unknown): Promise<
   return { ok: true };
 }
 
+export async function deletePurchase(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user || !isOwner(user.role)) return { ok: false, error: "Owner access required" };
+
+  const supabase = await createClient();
+  // Reverses the stock it added, then removes the purchase + items + charges.
+  const { error } = await supabase.rpc("delete_purchase", { p_purchase_id: id });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/purchases");
+  revalidatePath("/inventory");
+  return { ok: true };
+}
+
 export async function deleteSupplier(id: string): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user || !isOwner(user.role)) return { ok: false, error: "Owner access required" };
